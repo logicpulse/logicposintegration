@@ -5,7 +5,7 @@ from logicposintegration.logicpos_integration.utils import (
 )
 
 @frappe.whitelist()
-def get_article_by_code(code):
+def get_article_by_code(code, company=None):
     requests = _get_requests()
 
     if not code:
@@ -16,7 +16,7 @@ def get_article_by_code(code):
 
     try:
         response = requests.get(
-            f"{get_pos_base_url()}/articles/code/{code}",
+            f"{get_pos_base_url(company)}/articles/code/{code}",
             timeout=10
         )
 

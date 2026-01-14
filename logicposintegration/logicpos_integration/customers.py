@@ -5,7 +5,7 @@ from logicposintegration.logicpos_integration.utils import (
 )
 
 @frappe.whitelist()
-def get_customer_by_fiscal_number(fiscal_number):
+def get_customer_by_fiscal_number(fiscal_number, company=None):
     requests = _get_requests()
 
     if not fiscal_number:
@@ -16,7 +16,7 @@ def get_customer_by_fiscal_number(fiscal_number):
 
     try: 
         response = requests.get(
-            f"{get_pos_base_url()}/customers/customer",
+            f"{get_pos_base_url(company)}/customers/customer",
 			params={"fiscalNumber": fiscal_number },
             timeout=10
         )

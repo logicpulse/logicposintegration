@@ -7,7 +7,7 @@ from logicposintegration.logicpos_integration.utils import (
 )
 
 @frappe.whitelist()
-def create_pos_document(doctype=None, docname=None, payload=None):
+def create_pos_document(doctype=None, docname=None, payload=None, company=None):
     requests = _get_requests()
 
     if not payload:
@@ -18,7 +18,7 @@ def create_pos_document(doctype=None, docname=None, payload=None):
         frappe.log_error(title="Payload enviado ao POS", message=payload)
 		
         response = requests.post(
-            f"{get_pos_base_url()}/documents",
+            f"{get_pos_base_url(company)}/documents",
             data=payload,
 			headers={
 				"Content-Type": "application/json"
@@ -72,10 +72,10 @@ def create_pos_document(doctype=None, docname=None, payload=None):
 
 
 @frappe.whitelist()
-def generate_pdf_document(document_id: str | None = None): 
+def generate_pdf_document(document_id: str | None = None, company: str | None = None): 
     requests = _get_requests()
     re = _get_re()
-    url = f"{get_pos_base_url()}/documents/pdf"
+    url = f"{get_pos_base_url(company)}/documents/pdf"
   
     try:
         response = requests.get(
