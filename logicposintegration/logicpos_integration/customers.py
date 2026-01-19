@@ -20,8 +20,7 @@ def get_customer_by_fiscal_number(fiscal_number, company=None):
 			params={"fiscalNumber": fiscal_number },
             timeout=10
         )
-
-        # 👉 Caso de negócio: cliente não existe
+ 
         if response.status_code == 404:
             return {
                 "found": False,
