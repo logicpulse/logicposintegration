@@ -88,3 +88,9 @@ def get_pos_country_by_code(code, company: str | None = None):
         )
 
         frappe.throw("Erro de comunicação com o POS")
+
+def _success(message: str):
+    return {"success": True, "message": message}
+
+def _error(message: str):
+    return {"success": False, "message": message}

@@ -7,7 +7,7 @@ from logicposintegration.logicpos_integration.utils import (
 )
 
 @frappe.whitelist()
-def create_pos_document(doctype=None, docname=None, payload=None, company=None):
+def create_pos_document(doctype: str, docname: str, payload, company: str):
     requests = _get_requests()
 
     if not payload:
@@ -15,7 +15,7 @@ def create_pos_document(doctype=None, docname=None, payload=None, company=None):
 
     try:
 
-        frappe.log_error(title="Payload enviado ao POS", message=payload)
+        # frappe.log_error(title="Payload enviado ao POS", message=payload)
 		
         response = requests.post(
             f"{get_pos_base_url(company)}/documents",
@@ -46,12 +46,10 @@ def create_pos_document(doctype=None, docname=None, payload=None, company=None):
         pos_id = data.get("id")
         if not pos_id:
             frappe.throw("POS não retornou o ID do documento")
-
-        # salvar no ERP se necessário
+ 
         if doctype and docname:
             doc = frappe.get_doc(doctype, docname)
-            doc.pos_id = pos_id
-            # doc.save(ignore_permissions=True)
+            doc.pos_id = pos_id 
             frappe.db.set_value(doctype, docname, "pos_id", pos_id, update_modified=False)
 
         return {
