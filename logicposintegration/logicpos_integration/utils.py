@@ -27,11 +27,12 @@ def _get_re():
 		)
 		frappe.throw("Dependência ausente: módulo padrão 're' não disponível no servidor.")
 
-def get_pos_base_url(company: str | None = None) -> str:
-    # company_name = frappe.defaults.get_user_default("Company")
+def get_pos_base_url(company: str | None = None) -> str: 
 
     if not company:
-        frappe.throw("Empresa não informada")
+        company = get_user_company()
+        if not company:
+            frappe.throw("Empresa não informada")
 
     company = frappe.db.get_value(
         "Company",
@@ -48,6 +49,27 @@ def get_pos_base_url(company: str | None = None) -> str:
         if company.port
         else company.base_url
     )
+
+def get_user_company():
+    user = frappe.session.user
+
+    if user == "Guest":
+        frappe.throw("Utilizador não autenticado")
+
+    companies = frappe.get_all(
+        "User Permission",
+        filters={
+            "user": user,
+            "allow": "Company"
+        },
+        pluck="for_value"
+    )
+
+    if not companies:
+        frappe.throw("Utilizador não tem empresa associada")
+
+    # regra: primeira empresa permitida
+    return companies[0]
 
 @frappe.whitelist()
 def get_pos_country_by_code(code, company: str | None = None):

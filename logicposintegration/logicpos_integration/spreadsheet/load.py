@@ -1,7 +1,8 @@
 import frappe 
 import re
 from erpnext.selling.doctype.catalogo.catalogo import (convert_list_to_model, get_values)
-from logicposintegration.logicpos_integration.utils import(_error, _success)
+from logicposintegration.logicpos_integration.articles import update_article
+from logicposintegration.logicpos_integration.utils import(_error, _success, get_user_company)
 
 spreadsheet_id = "1Nm6YatjJrugBxM38yaXlIJgLHfVAMCnnMLw83lga5YQ"
 datas = [
@@ -85,9 +86,9 @@ def sync_single_item(item_code: str, ref: str):
 		return _error("Referência inválida") 
 	
 	try:
+		# company_name = get_user_company()
 		sheet_values = get_values(spreadsheet_id, data["sheet_name"], data["cell_range"])
-		list_values = convert_list_to_model(sheet_values) 
-		# frappe.log(f"list_values => {list_values} Erro Synchronização")
+		list_values = convert_list_to_model(sheet_values)  
 		value = next((lv for lv in list_values if getattr(lv, "Ref", None) == item_code), None)
 		if not value:
 			return _error("Item não encontrado na planilha")
@@ -103,10 +104,7 @@ def sync_single_item(item_code: str, ref: str):
 			return _error("Item não encontrado no LogicERP")
 		
 		new_values = parse_values(value)
-            
-		# frappe.log(f"new_values => {new_values} Erro Synchronização")
-		# frappe.log(f"item => {item} Erro Synchronização")
-		# if not has_changes({ item.standard_rate, item.valuation_rate, item.pvp_ao, item.pvp_mz }, new_values):
+             
 		if item.standard_rate == new_values["standard_rate"] and \
 		   item.valuation_rate == new_values["valuation_rate"] and \
 		   item.pvp_ao == new_values["pvp_ao"] and \
@@ -118,7 +116,12 @@ def sync_single_item(item_code: str, ref: str):
 			item_code,
 			new_values,
 			update_modified=False
-		)
+		) 
+            
+		# testes update no POS
+		update_article(item_code, new_values)
+		# fim testes
+            
 		return _success(f"Item {item_code} atualizado com sucesso")
 
 	except Exception as e:
@@ -172,6 +175,8 @@ def sync_items(items, list_values):
             new_values,
             update_modified=False
         )
+        
+        update_article(item_code, new_values)
 
         updated += 1
 
@@ -188,10 +193,10 @@ def filter_valid_refs(list_values):
         if getattr(lv, "Ref", None) not in invalid
     ]
 
-def parse_values(lv):
+def parse_values(lv): # to do: trocar os valores de pvr <> pvp
     return {
-        "standard_rate": normalize_decimal(parse_money(lv.PVR_PT)),
-        "valuation_rate": normalize_decimal(parse_money(lv.PVP_PT)),
+        "standard_rate": normalize_decimal(parse_money(lv.PVP_PT)),
+        "valuation_rate": normalize_decimal(parse_money(lv.PVR_PT)),
         "pvp_ao": normalize_decimal(parse_money(lv.PVP_AO)),
         "pvp_mz": normalize_decimal(parse_money(lv.PVP_MZ)),
     }
@@ -225,4 +230,4 @@ def parse_money(value: str) -> float | None:
         return float(cleaned)
     except ValueError:
         return None
-    
+
