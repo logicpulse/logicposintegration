@@ -1,0 +1,24 @@
+.footer-fixo {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+}
+
+.page-wrapper {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.content {
+    flex: 1;
+}
+
+.footer-final {
+    margin-top: auto;
+}
+
+html, body {
+    height: 100%;
+}

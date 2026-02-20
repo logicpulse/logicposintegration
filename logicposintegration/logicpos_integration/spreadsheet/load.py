@@ -1,8 +1,9 @@
 import frappe 
 import re
-from erpnext.selling.doctype.catalogo.catalogo import (convert_list_to_model, get_values)
+from erpnext.selling.doctype.catalogo.catalogo import (clean_image_formula, convert_list_to_model, get_values)
+# from erpnext.erpnext.selling.doctype.catalogo.catalogo import (clean_image_formula, convert_list_to_model, get_values)
 from logicposintegration.logicpos_integration.articles import update_article
-from logicposintegration.logicpos_integration.utils import(_error, _success, get_user_company)
+from logicposintegration.logicpos_integration.utils import(_error, _success)
 
 spreadsheet_id = "1Nm6YatjJrugBxM38yaXlIJgLHfVAMCnnMLw83lga5YQ"
 datas = [
@@ -193,12 +194,14 @@ def filter_valid_refs(list_values):
         if getattr(lv, "Ref", None) not in invalid
     ]
 
-def parse_values(lv): # to do: trocar os valores de pvr <> pvp
+def parse_values(lv): 
     return {
         "standard_rate": normalize_decimal(parse_money(lv.PVP_PT)),
         "valuation_rate": normalize_decimal(parse_money(lv.PVR_PT)),
         "pvp_ao": normalize_decimal(parse_money(lv.PVP_AO)),
         "pvp_mz": normalize_decimal(parse_money(lv.PVP_MZ)),
+        "image": clean_image_formula(lv.Image) if getattr(lv, "Image", None) else None,
+        "url": lv.URL if getattr(lv, "URL", None) else None
     }
 
 def has_changes(item, values):
