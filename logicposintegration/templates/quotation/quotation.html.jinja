@@ -1,8 +1,7 @@
 {% set company_doc = frappe.get_doc("Company", doc.company) %} {% set company_addr = frappe.get_doc("Address", company_doc.company_address) if company_doc.company_address else None %} {% set customer_doc = frappe.get_doc("Customer", doc.customer_name) if doc.customer_name else None %}
 {% set custumer_addr = frappe.get_doc("Address", doc.customer_address) if doc.customer_address else None %}
-{% set partes = doc.in_words.split(" ", 1) %}
-{% set moeda = partes[0] %} {% set valor = partes[1] | lower | replace("apenas.", "") | replace(" apenas", "") %}
-{% set ns = namespace(discount_total=0.0, sub_total=0.0, withholding_tax_total=0.0) %}
+{% set bank_account = frappe.db.get_value("Bank Account", {"company": doc.company}, ["bank", "iban"], as_dict=1) if doc.company else None %}
+{% set ns = namespace(discount_total=0.0, sub_total=0.0, withholding_tax_total=0.0, iva_total=0.0) %}
 <table class="table" style="margin-top: 0; border-bottom: solid 1px #d1d8dd">
     <tbody>
         <tr>
@@ -155,8 +154,18 @@
     <tbody>
         <tr>
             <td colspan="9" class="text-left">
-                <strong><small>Moeda: {{ frappe.db.get_value("Currency", doc.currency,
-                 "currency_name") }}</small></strong>
+                <small>
+                    <strong>Moeda:</strong>{{ frappe.db.get_value("Currency", doc.currency, "currency_name") }} |
+                    <strong>Banco:</strong>{{ bank_account.bank if bank_account else "N/D" }} |
+                    {# <strong>IBAN: </strong>{{ bank_account.iban|regex_replace('(.{4})(?=.)', '\1 ') if bank_account else "N/D" }} #}
+                    <strong>IBAN:</strong>
+                    {% if bank_account and bank_account.iban %}
+                        {% set clean_iban = bank_account.iban.replace(' ', '') %}
+                        {{ clean_iban | batch(4) | map('join', '') | join(' ') }}
+                    {% else %}
+                        N/D
+                    {% endif %}
+                </small>
             </td>
         </tr>
         <tr>
@@ -189,30 +198,35 @@
             </th>
         </tr>
         {%- for row in doc.items -%}
-            {% set withholding_tax = 0.06 %}
-            {% set line_discount = (row.price_list_rate * row.qty) - row.amount %}
+            {% set withholding_tax = 0.065 %}
+            {# {% set line_discount = (row.price_list_rate * row.qty) - row.amount %} #}
+            {% set line_discount = (row.price_list_rate * row.qty) * (row.discount_percentage / 100) if row.discount_percentage else 0 %}
             {% set ns.discount_total = ns.discount_total + line_discount %}
-            {% set line_total = row.price_list_rate * row.qty %}
-            {% set ns.sub_total = ns.sub_total + line_total %}
-            {% set iva = (row.amount * doc.taxes[0].rate) / 100 if doc.taxes else 0 %}
+            {% set line_sub_total = row.price_list_rate * row.qty %}
+            {% set line_total = (row.price_list_rate * row.qty) - line_discount %}
+            {% set line_iva = (line_total * (doc.taxes[0].rate / 100) if doc.taxes else 0) %}
+            {% set line_total_w_iva = line_total + line_iva %}
+            {% set ns.sub_total = ns.sub_total + line_sub_total %}
+            {% set ns.iva_total = ns.iva_total + line_iva %}
+            {# {% set net_total = ns.sub_total - ns.discount_total %} #}
             {# set row_amount = row.amount + iva #}
-            {% set line_withholding_tax = row.amount * withholding_tax if row.item_group and "serviços" in row.item_group|lower else 0 %}
+            {% set line_withholding_tax = line_total * withholding_tax if row.item_group and "serviços" in row.item_group|lower else 0 %}
             {% set ns.withholding_tax_total = ns.withholding_tax_total + line_withholding_tax %}
             {% set url = frappe.db.get_value("Item", row.item_code, "url") %}
-
             <tr>
                 <td style="width: 6%">
-                    <strong> 
+                    <strong>
                         <small>
                             <a href="{{ url }}" target="_blank">{{ row.item_code }}</a>
                         </small>
                     </strong>
+                    {% if line_withholding_tax != 0 %}
+                        <p style="font-size: 0.6em; font-style: italic; margin-bottom: 0;">(C/ Retenção na Fonte)</p>
+                    {% endif %}
                 </td>
                 <td style="width: 25%">
                     <small>
-                        <div class="col-12">
-                            {{ row.item_name }}
-                        </div>
+                        <div class="col-12">{{ row.item_name }}</div>
                     </small>
                 </td>
                 <td style="width: 12%" class="text-center">
@@ -238,34 +252,33 @@
                         <small>{{ row.discount_percentage }}%</small>
                     </td>
                     <td style="width: 12%; text-align: right">
-                         {# <small>{{ frappe.utils.fmt_money(row.amount, currency=doc.currency) }}</small> #}
-                         <small>{{ frappe.utils.fmt_money(row.amount) }}</small>
+                        {# <small>{{ frappe.utils.fmt_money(row.amount, currency=doc.currency) }}</small> #}
+                        <small>{{ frappe.utils.fmt_money(line_total) }}</small>
                     </td>
                     <td style="width: 7%; text-align: right">
                         <small>{{ doc.taxes[0].rate if doc.taxes else 0 }}%</small>
                     </td>
-                    <td style="width: 12%; text-align: right"> 
+                    <td style="width: 12%; text-align: right">
                         {# <small>{{ frappe.utils.fmt_money(row.amount + iva, currency=doc.currency) }}</small> #}
-                        <small>{{ frappe.utils.fmt_money(row.amount + iva) }}</small>
+                        <small>{{ frappe.utils.fmt_money(line_total_w_iva) }}</small>
                     </td>
                 </tr>
                 {% if row.description and row.description|striptags|trim != "" and row.description|striptags != row.item_name %}
                     <tr>
                         <td colspan="9" style="border-top: none" class="text-left">
-                            <small><strong>Nota:</strong> {{ row.description|striptags|trim }}</small>
+                            <small style="font-size: 0.6em;"><strong>Nota:</strong> {{ row.description|striptags|trim }}</small>
                         </td>
                     </tr>
                 {% endif %}
             {%- endfor -%}
-            <tr>
+            {# <tr>
                 <td colspan="7" class="text-right">
                     <strong>SUB-TOTAL</strong>
                 </td>
-                <td class="text-right" colspan="2">
-                    {# <small>{{ doc.get_formatted("total") }}</small> #}
+                <td class="text-right" colspan="2"> 
                     <small>{{ frappe.utils.fmt_money(ns.sub_total, currency=doc.currency) }}</small>
                 </td>
-            </tr>
+            </tr> #} 
             <tr>
                 {% set ns.discount_total = ns.discount_total + doc.discount_amount %}
                 <td colspan="7" class="text-right">
@@ -276,16 +289,26 @@
                 </td>
             </tr>
             <tr>
+                {% set net_total = ns.sub_total - ns.discount_total %}
                 <td colspan="7" class="text-right">
                     <strong>TOTAL LÍQUIDO</strong>
                 </td>
-                <td class="text-right" colspan="2">
-                    {# <small>{{ doc.get_formatted("net_total") }}</small> #}
-                    <small>{{ frappe.utils.fmt_money(ns.sub_total - ns.discount_total, currency=doc.currency) }}</small>
+                <td class="text-right" colspan="2"> 
+                    <small>{{ frappe.utils.fmt_money(net_total, currency=doc.currency) }}</small>
                 </td>
             </tr>
+            {% if doc.taxes %}
+                <tr>
+                    <td colspan="7" class="text-right"> 
+                        <strong>TOTAL IMPOSTO</strong>
+                    </td>
+                    <td class="text-right" colspan="2">
+                        <small>{{ frappe.utils.fmt_money(ns.iva_total, currency=doc.currency) }}</small>
+                    </td>
+                </tr>
+            {% endif %}
             {# IVA #}
-            {%- for row in doc.taxes -%}
+            {# {%- for row in doc.taxes -%}
                 <tr>
                     <td colspan="7" class="text-right">
                         <strong>TOTAL {{ row.description }}</strong>
@@ -294,7 +317,7 @@
                         <small>{{ row.get_formatted("tax_amount", doc) }}</small>
                     </td>
                 </tr>
-            {%- endfor -%}
+            {%- endfor -%} #}
             <tr>
                 <td colspan="7" class="text-right">
                     <strong>RETENÇÂO NA FONTE</strong>
@@ -308,10 +331,8 @@
                     <strong>TOTAL</strong>
                 </td>
                 <td class="text-right" colspan="2">
-                    {% set grand_total = (ns.sub_total - ns.discount_total) + doc.taxes[0].tax_amount - ns.withholding_tax_total %}
-                    <strong><small>
-                        {{ frappe.utils.fmt_money(grand_total, currency=doc.currency) }}
-                    </small></strong>
+                    {% set grand_total = net_total + ns.iva_total %}
+                    <strong><small>{{ frappe.utils.fmt_money(grand_total, currency=doc.currency) }}</small></strong>
                 </td>
                 {# {% if doc.rounded_total == 0 %}
                     <td class="text-right" colspan="2">
@@ -325,8 +346,14 @@
                 {% endif %} #}
             </tr>
             <tr>
+                {# {% set in_word = doc.in_words.split(" ", 1) %} #}
+                {% set in_words = frappe.utils.money_in_words(grand_total, doc.currency) %}
+                {% set parts = in_words.split(" ", 1) %}
+                {% set moeda = parts[0] %}
+                {% set valor = parts[1] | lower | replace("apenas.", "") | replace(" apenas", "") %}
                 <td colspan="9" class="text-right">
                     <strong><small>Por extenso: {{ moeda }} {{ valor | capitalize }}.</small></strong>
+                    {# <strong><small>Por extenso: {{ frappe.utils.money_in_words(grand_total, doc.currency) }}.</small></strong> #}
                 </td>
             </tr>
         </tbody>
@@ -347,3 +374,5 @@
             <small>Este documento não serve de fatura</small>
         </div>
     </div>
+    {# price_list_rate - A exibição depende de (JS) - margin_type #}
+    {# price_list_rate - A exibição depende de (JS) - Discount amount #}

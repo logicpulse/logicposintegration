@@ -213,8 +213,15 @@ def has_changes(item, values):
 # -------------------------
 # Utilitários
 # -------------------------
+# def is_different(a, b):
+#     return float(a or 0) != float(b or 0)
 def is_different(a, b):
-    return float(a or 0) != float(b or 0)
+    try:
+        return float(a) != float(b)
+    except (ValueError, TypeError):
+        pass
+
+    return str(a).strip() != str(b).strip()
 
 def normalize_decimal(value) -> float:
     try:

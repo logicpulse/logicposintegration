@@ -49,10 +49,11 @@ def update_article(code, new_data):
     if not article.get("found"):
         frappe.log_error(
             "Artigo não encontrado no POS",
-            f"Código: {code}",
+            f"Código: {code} | reason: {article.get('reason')}",
             "Item",
             code
         ) 
+        return
 
     try:
         article_id = article.get("data").get("id")  
