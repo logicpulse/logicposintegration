@@ -207,10 +207,10 @@
             {% set line_iva = (line_total * (doc.taxes[0].rate / 100) if doc.taxes else 0) %}
             {% set line_total_w_iva = line_total + line_iva %}
             {% set ns.sub_total = ns.sub_total + line_sub_total %}
-            {% set ns.iva_total = ns.iva_total + line_iva %}
-            {# {% set net_total = ns.sub_total - ns.discount_total %} #}
-            {# set row_amount = row.amount + iva #}
-            {% set line_withholding_tax = line_total * withholding_tax if row.item_group and "serviços" in row.item_group|lower else 0 %}
+            {% set ns.iva_total = ns.iva_total + line_iva %} 
+            {% set item_group = (row.item_group or "") | lower | replace("ç", "c") %}
+            {% set line_withholding_tax = line_total * withholding_tax if "servicos" in item_group else 0 %}
+            {# {% set line_withholding_tax = line_total * withholding_tax if row.item_group and "serviços" in row.item_group|lower else 0 %} #}
             {% set ns.withholding_tax_total = ns.withholding_tax_total + line_withholding_tax %}
             {% set url = frappe.db.get_value("Item", row.item_code, "url") %}
             <tr>
