@@ -197,7 +197,18 @@
                 <small>TOTAL C/ IVA</small>
             </th>
         </tr>
-        {%- for row in doc.items -%}
+        {% set sorted_items = doc.items|sort(attribute='item_group', case_sensitive=False) %}
+        {% set ns_group = namespace(prev=None) %}
+        {%- for row in sorted_items -%}
+            {% set grp_key = row.item_group or "" %}
+            {% if grp_key != ns_group.prev %}
+                <tr>
+                    <td colspan="9" style="background-color: #f0f4f7; border-top: 2px solid #d1d8dd; padding: 6px 8px">
+                        <strong><small>{{ row.item_group or "Sem grupo" }}</small></strong>
+                    </td>
+                </tr>
+                {% set ns_group.prev = grp_key %}
+            {% endif %}
             {% set withholding_tax = 0.065 %}
             {# {% set line_discount = (row.price_list_rate * row.qty) - row.amount %} #}
             {% set line_discount = (row.price_list_rate * row.qty) * (row.discount_percentage / 100) if row.discount_percentage else 0 %}
