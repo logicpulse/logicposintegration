@@ -1,7 +1,22 @@
-{% set company_doc = frappe.get_doc("Company", doc.company) %} {% set company_addr = frappe.get_doc("Address", company_doc.company_address) if company_doc.company_address else None %} {% set customer_doc = frappe.get_doc("Customer", doc.customer_name) if doc.customer_name else None %}
-{% set custumer_addr = frappe.get_doc("Address", doc.customer_address) if doc.customer_address else None %}
+{# <pre style="background:#f0f0f0;padding:10px;font-size:11px;overflow:auto">
+{{ doc.as_dict() | tojson(indent=2) }}
+</pre> #}
+{% set links = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': doc.company, 'parenttype': 'Address'}, fields=['parent']) %}
+{% set company_address = frappe.db.get_value('Address', links[0].parent, ['address_line1', 'address_line2', 'city', 'state', 'country', 'email_id', 'phone'], as_dict=True) %}
+{% set company = frappe.db.get_value("Company", doc.company, ["name", "country", "website", "phone_no", "email"], as_dict=1) %} 
+
+{% set customer = frappe.db.get_value("Customer", doc.customer_name, ["name", "tax_id", "primary_address", "customer_primary_address", "first_name", "last_name"], as_dict=True) %}
+{% set _cust_links = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc.customer_name, 'parenttype': 'Address'}, fields=['parent'], order_by='creation asc') %}
+{% set _cust_addr_name = customer.customer_primary_address or (_cust_links[0].parent if _cust_links else None) %}
+{% set customer_address = frappe.db.get_value('Address', _cust_addr_name, ['address_line1', 'address_line2', 'city', 'state', 'country', 'pincode', 'phone'], as_dict=True) if _cust_addr_name else None %}
+
+{% set _contact_links = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc.customer_name, 'parenttype': 'Contact'}, fields=['parent'], order_by='creation asc') %}
+{% set _contact_name = doc.contact_person or (_contact_links[0].parent if _contact_links else None) %}
+{% set customer_contact = frappe.db.get_value('Contact', _contact_name, ['first_name', 'last_name', 'email_id'], as_dict=True) if _contact_name else None %}
+
 {% set bank_account = frappe.db.get_value("Bank Account", {"company": doc.company}, ["bank", "iban"], as_dict=1) if doc.company else None %}
 {% set ns = namespace(discount_total=0.0, sub_total=0.0, withholding_tax_total=0.0, iva_total=0.0) %}
+
 <table class="table" style="margin-top: 0; border-bottom: solid 1px #d1d8dd">
     <tbody>
         <tr>
@@ -10,30 +25,42 @@
                     <thead>
                         <tr>
                             <td style="border: 0; padding: 0 !important">
-                                <h3 style="margin: 0">{{ doc.company[:-2] }} {{ company_doc.country }}</h3>
+                                <h3 style="margin: 0">{{ doc.company[:-2] }} {{ company.country }}</h3>
                             </td>
                         </tr>
-                        <tr>
-                            <td style="border: 0; padding: 0 !important">
-                                <small>{{ company_doc.address_name or "N/D" }}</small>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="border: 0; padding: 0 !important">
-                                <small>Telefone: {{ company_addr.phone or company_doc.phone_no or "N/D" }}</small>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="border: 0; padding: 0 !important">
-                                <small>Email: {{ company_addr.email_id or company_doc.email or "N/D"
-                                }}</small>
-                            </td>
-                        </tr>
+                        {% if company_address %}
+                            <tr>
+                                <td style="border: 0; padding: 0 !important">
+                                    <small>{{ [company_address.address_line1, company_address.city, company_address.state ] | select | join(", ") }}</small>
+                                </td>
+                            </tr>
+                        {% endif %}
+                        {% if company.phone_no %}
+                            <tr>
+                                <td style="border: 0; padding: 0 !important">
+                                    <small>Telefone: {{ company.phone_no }}</small>
+                                </td>
+                            </tr>
+                        {% endif %}
+                        {% if company_address.phone %}
+                            <tr>
+                                <td style="border: 0; padding: 0 !important">
+                                    <small>Telemovel: {{ company_address.phone }}</small>
+                                </td>
+                            </tr>
+                        {% endif %}
+                        {% if company.email %}
+                            <tr>
+                                <td style="border: 0; padding: 0 !important">
+                                    <small>Email: {{ company.email }}</small> 
+                                </td>
+                            </tr>
+                        {% endif %} 
                         <tr>
                             <td style="border: 0; padding: 0 !important">
                                 <small>
                                     Website:
-                                    <a href="{{ company_doc.website or 'https://www.logicpulse.com/pt/' }}"
+                                    <a href="{{ company.website or 'https://www.logicpulse.com/pt/' }}"
                                        target="_blank"
                                        class="text-info">
                                         <strong>logicpulse.com</strong>
@@ -92,7 +119,7 @@
                 <small>{{ doc.customer_name }}</small>
             </td>
             <td class="text-center">
-                <small>{{ frappe.db.get_value("Customer", doc.customer_name, "fiscal_number") }}</small>
+                <small>{{ customer.tax_id or "N/D" }}</small>
             </td>
             <td class="text-center">
                 <small>{{ doc.get_formatted("transaction_date") }}</small>
@@ -119,26 +146,25 @@
             </th>
         </tr>
         <tr>
-            {% if doc.customer_address %}
+            {% if customer_address %}
                 <td class="text-center">
-                    <small>{{ frappe.db.get_value("Address", doc.customer_address, "city") or "" }}, {{ frappe.db.get_value("Address", doc.customer_address, "country") or "" }}</small>
-                </td>
-            {% else %}
-                <td class="text-center">
-                    <small>&nbsp;</small>
+                    <small>{{ customer_address.state or "N/D" }}</small>
                 </td>
             {% endif %}
-            <td class="text-center">
-                <small>{{ custumer_addr.address_line1 or "N/D" }}</small>
-            </td>
-            {% if doc.contact_display %}
+            {% if customer_address %}
                 <td class="text-center">
-                    <small>{{ doc.contact_display }}</small>
+                    <small>{{ [customer_address.address_line1, customer_address.city] | select | join(", ") }}</small>
                 </td>
             {% else %}
                 <td class="text-center">
-                    <small>{{ frappe.db.get_value("Contact", doc.contact_person, "first_name") or "" }} {{ frappe.db.get_value("Contact", doc.contact_person, "last_name") or "" }}</small>
+                    <small>N/D</small>
                 </td>
+            {% endif %}
+            {% if customer_contact %}
+                {% set contact_name = customer_contact.first_name + " " + customer_contact.last_name if customer_contact.last_name else customer_contact.first_name or "N/D" %}
+                <td class="text-center">
+                    <small>{{ contact_name }}</small>
+                </td> 
             {% endif %}
             <td class="text-center">
                 <small>{{ doc.get_formatted("additional_discount_percentage") }} %</small>
@@ -209,15 +235,15 @@
                 </tr>
                 {% set ns_group.prev = grp_key %}
             {% endif %}
-            {% set withholding_tax = 0.065 %}
-            {# {% set line_discount = (row.price_list_rate * row.qty) - row.amount %} #}
-            {% set line_discount = (row.price_list_rate * row.qty) * (row.discount_percentage / 100) if row.discount_percentage else 0 %}
+            {% set withholding_tax = 0.065 %} 
+            {% set rate_sem_desconto = row.price_list_rate %} 
+            {% set line_discount = (rate_sem_desconto * row.qty) * (row.discount_percentage / 100) if row.discount_percentage else 0 %}
             {% set ns.discount_total = ns.discount_total + line_discount %}
-            {% set line_sub_total = row.price_list_rate * row.qty %}
-            {% set line_total = (row.price_list_rate * row.qty) - line_discount %}
+            {% set line_sub_total = row.rate * row.qty %} 
+            {% set line_total = line_sub_total  %}
             {% set line_iva = (line_total * (doc.taxes[0].rate / 100) if doc.taxes else 0) %}
             {% set line_total_w_iva = line_total + line_iva %}
-            {% set ns.sub_total = ns.sub_total + line_sub_total %}
+            {% set ns.sub_total = ns.sub_total + line_total %}
             {% set ns.iva_total = ns.iva_total + line_iva %} 
             {% set item_group = (row.item_group or "") | lower | replace("ç", "c") %}
             {% set line_withholding_tax = line_total * withholding_tax if "servicos" in item_group else 0 %}
@@ -257,7 +283,7 @@
                     </td>
                     <td style="width: 12%; text-align: right">
                         {# <small>{{ row.get_formatted("price_list_rate", doc) }}</small> #}
-                        <small>{{ frappe.utils.fmt_money(row.price_list_rate) }}</small>
+                        <small>{{ frappe.utils.fmt_money(rate_sem_desconto) }}</small>
                     </td>
                     <td style="width: 7%; text-align: right">
                         <small>{{ row.discount_percentage }}%</small>
@@ -300,7 +326,7 @@
                 </td>
             </tr>
             <tr>
-                {% set net_total = ns.sub_total - ns.discount_total %}
+                {% set net_total = ns.sub_total %}
                 <td colspan="7" class="text-right">
                     <strong>TOTAL LÍQUIDO</strong>
                 </td>
@@ -344,24 +370,14 @@
                 <td class="text-right" colspan="2">
                     {% set grand_total = net_total + ns.iva_total %}
                     <strong><small>{{ frappe.utils.fmt_money(grand_total, currency=doc.currency) }}</small></strong>
-                </td>
-                {# {% if doc.rounded_total == 0 %}
-                    <td class="text-right" colspan="2">
-                        <strong><small>{{ doc.get_formatted("grand_total") }}</small></strong>
-                        <strong><small>{{ frappe.utils.fmt_money(doc.grand_total - ns.withholding_tax_total, currency=doc.currency) }}</small></strong>
-                    {% else %}
-                    </td>
-                    <td class="text-right" colspan="2">
-                        <strong><small>{{ doc.get_formatted("rounded_total") }}</small></strong>
-                    </td>
-                {% endif %} #}
+                </td> 
             </tr>
             <tr>
                 {# {% set in_word = doc.in_words.split(" ", 1) %} #}
                 {% set in_words = frappe.utils.money_in_words(grand_total, doc.currency) %}
                 {% set parts = in_words.split(" ", 1) %}
                 {% set moeda = parts[0] %}
-                {% set valor = parts[1] | lower | replace("apenas.", "") | replace(" apenas", "") %}
+                {% set valor = parts[1] | lower | replace("apenas.", "") | replace(" apenas", "") | replace(" only.", "") | replace("and", "kzs e") %}
                 <td colspan="9" class="text-right">
                     <strong><small>Por extenso: {{ moeda }} {{ valor | capitalize }}.</small></strong>
                     {# <strong><small>Por extenso: {{ frappe.utils.money_in_words(grand_total, doc.currency) }}.</small></strong> #}
