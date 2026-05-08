@@ -2,7 +2,8 @@
 import frappe
 from logicposintegration.logicpos_integration.utils import (
     _get_re, 
-    _get_requests, 
+    _get_requests,
+    get_pos_auth_headers, 
     get_pos_base_url
 )
 
@@ -13,16 +14,13 @@ def create_pos_document(doctype: str, docname: str, payload, company: str):
     if not payload:
         frappe.throw("Payload não informado")
 
-    try:
-
+    try:  
         # frappe.log_error(title="Payload enviado ao POS", message=payload)
 		
         response = requests.post(
             f"{get_pos_base_url(company)}/documents",
             data=payload,
-			headers={
-				"Content-Type": "application/json"
-			},
+			headers=get_pos_auth_headers(),
             timeout=15
         )
 
@@ -81,9 +79,7 @@ def generate_pdf_document(document_id: str | None = None, company: str | None = 
 			params={
 				"id": document_id
 			},
-            headers={
-        		"Accept": "*/*"
-    		},
+            headers=get_pos_auth_headers(with_content_type=False),
             timeout=30,
 			stream=True
         )

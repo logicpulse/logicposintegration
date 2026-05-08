@@ -1,6 +1,7 @@
 import frappe
 from logicposintegration.logicpos_integration.utils import (
     _get_requests,
+    get_pos_auth_headers,
     get_pos_base_url
 )
 
@@ -18,6 +19,7 @@ def get_customer_by_fiscal_number(fiscal_number, company=None):
         response = requests.get(
             f"{get_pos_base_url(company)}/customers/customer",
 			params={"fiscalNumber": fiscal_number },
+            headers=get_pos_auth_headers(with_content_type=False),
             timeout=10
         )
  

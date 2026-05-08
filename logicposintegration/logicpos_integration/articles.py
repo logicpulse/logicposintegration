@@ -1,6 +1,7 @@
 import frappe
 from logicposintegration.logicpos_integration.utils import (
-    _get_requests, 
+    _get_requests,
+    get_pos_auth_headers, 
     get_pos_base_url, 
     get_user_company
 ) 
@@ -18,6 +19,7 @@ def get_article_by_code(code, company=None):
     try:
         response = requests.get(
             f"{get_pos_base_url(company)}/articles/code/{code}",
+            headers=get_pos_auth_headers(with_content_type=False),
             timeout=10
         )
  
@@ -72,9 +74,7 @@ def update_article(code, new_data):
         response = requests.put(
             url=f"{get_pos_base_url()}/articles/{article_id}",
             json=payload,
-			headers={
-				"Content-Type": "application/json"
-			},
+			headers=get_pos_auth_headers(),
             timeout=15
         )
 

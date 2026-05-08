@@ -1,4 +1,10 @@
 import frappe
+import base64
+import json as _json
+from datetime import datetime, timezone
+
+_POS_TOKEN_CACHE_KEY = "logicpos_auth_token"
+_POS_TOKEN_DEFAULT_TTL = 3300  # fallback de 55 min se não conseguir ler o exp do JWT
 
 def _get_requests():
 	"""Import requests at runtime and raise a clear error if missing.
@@ -85,6 +91,7 @@ def get_pos_country_by_code(code, company: str | None = None):
         response = requests.get(
             f"{get_pos_base_url(company)}/countries/country",
 			params={"code2": code },
+            headers=get_pos_auth_headers(with_content_type=False),
             timeout=10
         )
 
@@ -110,6 +117,151 @@ def get_pos_country_by_code(code, company: str | None = None):
         )
 
         frappe.throw("Erro de comunicação com o POS")
+
+@frappe.whitelist()
+def login_to_pos(company: str):
+    user = frappe.session.user
+    if user == "Guest":
+        frappe.throw("Utilizador não autenticado")
+
+    cached = get_pos_token(user)
+    if cached:
+        return {"success": True, "message": "Login no POS já realizado (token em cache)"}
+
+    _do_login(user, company)
+    return {"success": True, "message": "Login no POS realizado com sucesso"}
+
+
+def _decode_jwt_exp(token: str) -> int | None:
+    """Extrai o claim 'exp' (Unix timestamp) do payload do JWT sem verificar assinatura."""
+    try:
+        parts = token.split(".")
+        if len(parts) != 3:
+            return None
+        # base64url → base64 padrão (padding obrigatório)
+        payload_b64 = parts[1] + "=" * (-len(parts[1]) % 4)
+        payload = _json.loads(base64.urlsafe_b64decode(payload_b64))
+        return int(payload["exp"]) if "exp" in payload else None
+    except Exception:
+        return None
+
+
+def _ttl_from_jwt(token: str) -> int:
+    """Calcula o TTL em segundos até à expiração do JWT (com 60s de margem)."""
+    exp = _decode_jwt_exp(token)
+    if exp is None:
+        return _POS_TOKEN_DEFAULT_TTL
+    now = int(datetime.now(timezone.utc).timestamp())
+    return max(exp - now - 60, 60)
+
+
+def _save_pos_token(user: str, token: str) -> None:
+    ttl = _ttl_from_jwt(token)
+    frappe.cache().set_value(f"{_POS_TOKEN_CACHE_KEY}:{user}", token, expires_in_sec=ttl)
+
+
+def get_pos_token(user: str | None = None):
+    """Devolve a resposta de autenticação POS guardada em cache.
+    Retorna None se o token não existir ou já tiver expirado (Redis TTL).
+    """
+    if not user:
+        user = frappe.session.user
+    return frappe.cache().get_value(f"{_POS_TOKEN_CACHE_KEY}:{user}")
+
+
+def clear_pos_token(user: str | None = None) -> None:
+    if not user:
+        user = frappe.session.user
+    frappe.cache().delete_value(f"{_POS_TOKEN_CACHE_KEY}:{user}")
+
+
+def get_pos_auth_headers(
+    user: str | None = None, 
+    with_content_type: bool = True, 
+    with_accept: bool = True
+) -> dict:
+    """
+    Retorna o dicionário de headers para chamadas ao POS, incluindo o Bearer token.
+    Lança exceção se o token não estiver disponível ou expirado.
+    """
+    token = get_pos_token(user)
+    if not token:
+        frappe.throw("Token POS expirado ou não disponível. Faça login no POS novamente.")
+
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    if with_content_type:
+        headers["Content-Type"] = "application/json"
+    if with_accept:
+        headers["Accept"] = "application/json"
+    return headers
+
+
+def pos_request(method: str, endpoint: str, company: str | None = None, **kwargs):
+    """Wrapper para chamadas ao POS com re-login automático em caso de 401.
+
+    Uso:
+        response = pos_request("GET", "/customers/123", company=frm.doc.company)
+        response = pos_request("POST", "/orders", company=..., json={...})
+    """
+    requests = _get_requests()
+    base_url = get_pos_base_url(company)
+    url = f"{base_url}{endpoint}"
+    timeout = kwargs.pop("timeout", 15)
+
+    def _do_request():
+        return requests.request(
+            method,
+            url,
+            headers=get_pos_auth_headers(),
+            timeout=timeout,
+            **kwargs,
+        )
+
+    response = _do_request()
+
+    if response.status_code == 401:
+        user = frappe.session.user
+        clear_pos_token(user)
+        _do_login(user, company)
+        response = _do_request()
+
+    return response
+
+def _do_login(user: str, company: str | None = None) -> None:
+    """Login silencioso ao POS (sem whitelist). Guarda o novo token em cache."""
+    re = _get_re()
+    _guid_pattern = re.compile(
+        r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+        re.IGNORECASE
+    )
+    user_doc = frappe.get_doc("User", user)
+
+    for field, label in [("terminal_id", "Terminal ID"), ("user_id", "User ID")]:
+        val = getattr(user_doc, field, None)
+        if not val or not _guid_pattern.match(val):
+            frappe.throw(f"{label} não configurado ou não está no formato GUID")
+
+    if not user_doc.pin:
+        frappe.throw("PIN não configurado para o utilizador")
+
+    requests = _get_requests()
+    response = requests.post(
+        f"{get_pos_base_url(company)}/auth/login",
+        json={
+            "TerminalId": user_doc.terminal_id,
+            "UserId": user_doc.user_id,
+            "Pin": user_doc.pin,
+        },
+        timeout=10,
+    )
+
+    if response.status_code != 200:
+        frappe.throw(f"Erro ao fazer login no POS (HTTP {response.status_code})")
+
+    _save_pos_token(user, response.text.strip().strip('"'))
+
 
 def _success(message: str):
     return {"success": True, "message": message}
