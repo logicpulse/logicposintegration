@@ -56,6 +56,14 @@ def get_pos_base_url(company: str | None = None) -> str:
         else company.base_url
     )
 
+
+def _pos_url(company: str | None, path: str) -> str:
+    """Junta a raiz configurada na empresa com um path, sem barras duplicadas."""
+    root = get_pos_base_url(company).rstrip("/")
+    p = path if path.startswith("/") else f"/{path}"
+    return f"{root}{p}"
+
+
 def get_user_company():
     user = frappe.session.user
 
@@ -206,8 +214,7 @@ def pos_request(method: str, endpoint: str, company: str | None = None, **kwargs
         response = pos_request("POST", "/orders", company=..., json={...})
     """
     requests = _get_requests()
-    base_url = get_pos_base_url(company)
-    url = f"{base_url}{endpoint}"
+    url = _pos_url(company, endpoint)
     timeout = kwargs.pop("timeout", 15)
 
     def _do_request():
@@ -247,8 +254,9 @@ def _do_login(user: str, company: str | None = None) -> None:
         frappe.throw("PIN não configurado para o utilizador")
 
     requests = _get_requests()
+    login_url = _pos_url(company, "/auth/login")
     response = requests.post(
-        f"{get_pos_base_url(company)}/auth/login",
+        login_url,
         json={
             "TerminalId": user_doc.terminal_id,
             "UserId": user_doc.user_id,
@@ -258,6 +266,16 @@ def _do_login(user: str, company: str | None = None) -> None:
     )
 
     if response.status_code != 200:
+        body_preview = (response.text or "")[:800]
+        frappe.log_error(
+            title="Falha no login ao POS",
+            message=f"URL: {login_url}\nHTTP {response.status_code}\n{body_preview}",
+        )
+        if response.status_code == 404:
+            frappe.throw(
+                "O POS devolveu 404 em /auth/login. Confirme na empresa o campo Base URL "
+                "(inclua o prefixo da API se existir, ex.: …/api) e a porta; o pedido foi registado nos erros com a URL exata."
+            )
         frappe.throw(f"Erro ao fazer login no POS (HTTP {response.status_code})")
 
     _save_pos_token(user, response.text.strip().strip('"'))

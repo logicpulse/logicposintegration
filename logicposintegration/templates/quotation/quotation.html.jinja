@@ -377,7 +377,7 @@
                 {% set in_words = frappe.utils.money_in_words(grand_total, doc.currency) %}
                 {% set parts = in_words.split(" ", 1) %}
                 {% set moeda = parts[0] %}
-                {% set valor = parts[1] | lower | replace("apenas.", "") | replace(" apenas", "") | replace(" only.", "") | replace("and", "kzs e") %}
+                {% set valor = parts[1] | lower | replace("apenas.", "") | replace(" apenas", "") | replace(" only.", "") | replace("and", "kzs e") | replace(" somente.", "") %}
                 <td colspan="9" class="text-right">
                     <strong><small>Por extenso: {{ moeda }} {{ valor | capitalize }}.</small></strong>
                     {# <strong><small>Por extenso: {{ frappe.utils.money_in_words(grand_total, doc.currency) }}.</small></strong> #}
