@@ -63,7 +63,7 @@
                                     <a href="{{ company.website or 'https://www.logicpulse.com/pt/' }}"
                                        target="_blank"
                                        class="text-info">
-                                        <strong>logicpulse.com</strong>
+                                        <strong>logicpulse.com </strong>
                                     </a>
                                 </small>
                             </td>
@@ -146,11 +146,9 @@
             </th>
         </tr>
         <tr>
-            {% if customer_address %}
-                <td class="text-center">
-                    <small>{{ customer_address.state or "N/D" }}</small>
-                </td>
-            {% endif %}
+            <td class="text-center">
+                <small>{{ customer_address.state or "N/D" }}</small>
+            </td>
             {% if customer_address %}
                 <td class="text-center">
                     <small>{{ [customer_address.address_line1, customer_address.city] | select | join(", ") }}</small>
@@ -159,13 +157,11 @@
                 <td class="text-center">
                     <small>N/D</small>
                 </td>
-            {% endif %}
-            {% if customer_contact %}
-                {% set contact_name = customer_contact.first_name + " " + customer_contact.last_name if customer_contact.last_name else customer_contact.first_name or "N/D" %}
-                <td class="text-center">
-                    <small>{{ contact_name }}</small>
-                </td> 
-            {% endif %}
+            {% endif %} 
+            {% set contact_name = customer_contact.first_name + " " + customer_contact.last_name if customer_contact.last_name else customer_contact.first_name or "N/D" %}
+            <td class="text-center">
+                <small>{{ contact_name }}</small>
+            </td>  
             <td class="text-center">
                 <small>{{ doc.get_formatted("additional_discount_percentage") }} %</small>
             </td>
