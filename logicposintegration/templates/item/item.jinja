@@ -1,0 +1,291 @@
+{# <pre style="background:#f0f0f0;padding:10px;font-size:11px;overflow:auto">
+    {{ doc.as_dict() | tojson(indent=2) }}
+    </pre> #}
+    {# Item Print Format — LogicPulse style (based on Quotation header) #}
+    {% set default_company = frappe.db.get_default('company') or frappe.db.get_single_value('Global Defaults', 'default_company') %}
+    {% set company_name = (doc.item_defaults[0].company if doc.item_defaults else none) or default_company %}
+    
+    {% if company_name %}
+    {% set links = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name, 'parenttype': 'Address'}, fields=['parent'], limit=1) %}
+    {% set company_address = links and frappe.db.get_value('Address', links[0].parent, ['address_line1', 'address_line2', 'city', 'state', 'country', 'email_id', 'phone'], as_dict=True) or none %}
+    {% set company = frappe.db.get_value("Company", company_name, ["name", "country", "website", "phone_no", "email", "company_logo"], as_dict=1) %}
+    {% endif %}
+    {% set default_currency = frappe.db.get_value('Company', company_name, 'default_currency') if company_name else frappe.db.get_single_value('Global Defaults', 'default_currency') %}
+    {% set item_prices = frappe.db.get_all('Item Price', filters={'item_code': doc.item_code}, fields=['price_list', 'price_list_rate', 'currency', 'uom', 'valid_from', 'valid_upto'], order_by='price_list asc') %}
+    
+    <style>
+        .item-print { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #36414c; }
+        .item-print h3 { color: #36414c; }
+        .item-print .label-muted { color: #8d99a6; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .item-print .value { font-size: 13px; }
+        .item-print .item-image { max-height: 220px; max-width: 100%; object-fit: contain; border: 1px solid #d1d8dd; border-radius: 4px; padding: 8px; background: #fff; }
+        .item-print .spec-table th { background: #f5f7fa; width: 35%; font-weight: 600; }
+        .item-print .spec-table td, .item-print .spec-table th { border: 1px solid #d1d8dd !important; padding: 8px 10px !important; vertical-align: middle; }
+    .item-print .spec-table .rate { color: #2490ef; font-weight: 700; white-space: nowrap; }
+    .item-print .price-list-table thead th { background: #e8eef3; font-size: 10px; text-transform: uppercase; padding: 6px 8px !important; text-align: center; }
+    .item-print .price-list-table tbody td { padding: 6px 8px !important; text-align: right; vertical-align: middle; }
+    .item-print .price-list-table tbody td:first-child { text-align: left; font-weight: 600; }
+    .item-print .price-list-table .rate { color: #2490ef; font-weight: 700; white-space: nowrap; }
+    </style>
+    
+    <div class="item-print">
+    
+    {# ── Cabeçalho (empresa + título) ── #}
+    <table class="table" style="margin-top: 0; border-bottom: solid 1px #d1d8dd">
+        <tbody>
+            <tr>
+                <td style="width: 55%; border: 0; vertical-align: top">
+                    <table class="table" style="margin: 0">
+                        <thead>
+                            {% if company %}
+                            <tr>
+                                <td style="border: 0; padding: 0 !important">
+                                    <h3 style="margin: 0">{{ company.name[:-2] if company.name|length > 2 else company.name }} {{ company.country }}</h3>
+                                </td>
+                            </tr>
+                            {% if company_address %}
+                            <tr>
+                                <td style="border: 0; padding: 0 !important">
+                                    <small>{{ [company_address.address_line1, company_address.city, company_address.state] | select | join(", ") }}</small>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if company.phone_no %}
+                            <tr>
+                                <td style="border: 0; padding: 0 !important">
+                                    <small>Telefone: {{ company.phone_no }}</small>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if company_address and company_address.phone %}
+                            <tr>
+                                <td style="border: 0; padding: 0 !important">
+                                    <small>Telemóvel: {{ company_address.phone }}</small>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if company.email %}
+                            <tr>
+                                <td style="border: 0; padding: 0 !important">
+                                    <small>Email: {{ company.email }}</small>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td style="border: 0; padding: 0 !important">
+                                    <small>
+                                        Website:
+                                        <a href="{{ company.website or 'https://www.logicpulse.com/pt/' }}"
+                                           target="_blank"
+                                           class="text-info">
+                                            <strong>logicpulse.com</strong>
+                                        </a>
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </thead>
+                    </table>
+                </td>
+                <td style="width: 45%; border: 0; vertical-align: top">
+                    <table class="table" style="margin: 0">
+                        <tbody>
+                            <tr>
+                                <td style="border: 0; text-align: right; padding-bottom: 8px">
+                                    {% if company %}
+                                    <img src="{{ company.company_logo or 'https://www.logicpulse.com/images/thumbs/0002017.png' }}"
+                                         alt="company-logo"
+                                         height="80"
+                                         width="auto" />
+                                    {% else %}
+                                    <img src="https://www.logicpulse.com/images/thumbs/0002017.png"
+                                         alt="company-logo"
+                                         height="80"
+                                         width="auto" />
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table class="table table-striped" style="margin: 0">
+                        <tbody>
+                            <tr>
+                                <th class="text-center" style="padding: 10px">{{ _("Ficha de Artigo") }}</th>
+                            </tr>
+                            <tr>
+                                <td class="text-center" style="font-size: 16px; font-weight: 600; padding: 10px">{{ doc.item_code }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    
+    {# ── Corpo: imagem + identificação ── #}
+    <table class="table" style="margin-top: 16px">
+        <tbody>
+            <tr>
+                <td style="width: 38%; border: 0; vertical-align: top; padding-right: 16px">
+                    {% if doc.image %}
+                    <img src="{{ doc.image }}" alt="{{ doc.item_name }}" class="item-image" />
+                    {% else %}
+                    <div style="height: 180px; border: 1px dashed #d1d8dd; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #8d99a6;">
+                        <small>{{ _("Sem imagem") }}</small>
+                    </div>
+                    {% endif %}
+                </td>
+                <td style="width: 62%; border: 0; vertical-align: top">
+                    <h4 style="margin: 0 0 8px 0; line-height: 1.35">{{ doc.item_name }}</h4>
+                    {% if doc.description and doc.description != doc.item_name %}
+                    <p style="margin: 0 0 12px 0; color: #5a6a7a; line-height: 1.5">{{ doc.description }}</p>
+                    {% elif doc.description %}
+                    <p style="margin: 0 0 12px 0; color: #5a6a7a; line-height: 1.5">{{ doc.description }}</p>
+                    {% endif %}
+    
+                    <table class="table spec-table" style="margin: 0">
+                        <tbody>
+                            <tr>
+                                <th>{{ _("Código") }}</th>
+                                <td><strong>{{ doc.item_code }}</strong></td>
+                            </tr>
+                            <tr>
+                                <th>{{ _("Grupo") }}</th>
+                                <td>{{ doc.item_group or "—" }}</td>
+                            </tr>
+                            {% if doc.brand %}
+                            <tr>
+                                <th>{{ _("Marca") }}</th>
+                                <td>{{ doc.brand }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <th>{{ _("Unidade") }}</th>
+                                <td>{{ doc.stock_uom or "—" }}</td>
+                            </tr>
+                            {% if doc.country_of_origin %}
+                            <tr>
+                                <th>{{ _("Origem") }}</th>
+                                <td>{{ doc.country_of_origin }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if doc.warranty_period %}
+                            <tr>
+                                <th>{{ _("Garantia") }}</th>
+                                <td>{{ doc.warranty_period }} {{ _("meses") }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if doc.lead_time_days %}
+                            <tr>
+                                <th>{{ _("Prazo de entrega") }}</th>
+                                <td>{{ doc.lead_time_days }} {{ _("dias") }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if doc.min_order_qty %}
+                            <tr>
+                                <th>{{ _("Qtd. mínima") }}</th>
+                                <td>{{ doc.get_formatted("min_order_qty") }} {{ doc.stock_uom }}</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    
+    {# ── Disponibilidade + lista de preços ── #}
+    <!-- <table class="table spec-table" style="margin-top: 12px; margin-bottom: 0">
+        <tbody>
+            <tr>
+                <th>{{ _("Artigo de stock") }}</th>
+                <td>{% if doc.is_stock_item %}<span class="text-success">✓ {{ _("Sim") }}</span>{% else %}{{ _("Não") }}{% endif %}</td>
+            </tr>
+            <tr>
+                <th>{{ _("Venda") }}</th>
+                <td>{% if doc.is_sales_item %}<span class="text-success">✓ {{ _("Sim") }}</span>{% else %}{{ _("Não") }}{% endif %}</td>
+            </tr>
+            <tr>
+                <th>{{ _("Compra") }}</th>
+                <td>{% if doc.is_purchase_item %}<span class="text-success">✓ {{ _("Sim") }}</span>{% else %}{{ _("Não") }}{% endif %}</td>
+            </tr>
+            <tr>
+                <th>{{ _("Estado") }}</th>
+                <td>{% if doc.disabled %}<span class="text-danger">{{ _("Desativado") }}</span>{% else %}<span class="text-success">{{ _("Ativo") }}</span>{% endif %}</td>
+            </tr>
+        </tbody>
+    </table> -->
+    {% if item_prices %}
+    <table class="table price-list-table" style="margin: 0">
+        <thead>
+            <tr>
+                <th>{{ _("Lista") }}</th>
+                <th>{{ _("Preço") }}</th>
+                <!-- <th>{{ _("UOM") }}</th> -->
+                <th>{{ _("Artigo de stock") }}</th>
+                <th>{{ _("Venda") }}</th>
+                <th>{{ _("Compra") }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in item_prices %}
+            <tr>
+                <td>{{ p.price_list }}</td>
+                <td class="rate">
+                    {{ frappe.format_value(p.price_list_rate) }}
+                    {% if p.currency %}<small style="color: #8d99a6; font-weight: 400">{{ p.currency }}</small>{% endif %}
+                </td>
+                <!-- <td>{{ p.uom or doc.stock_uom }}</td> -->
+                <td>{% if doc.is_stock_item %}<span class="text-success">✓ {{ _("Sim") }}</span>{% else %}{{ _("Não") }}{% endif %}</td>
+                <td>{% if doc.is_sales_item %}<span class="text-success">✓ {{ _("Sim") }}</span>{% else %}{{ _("Não") }}{% endif %}</td>
+                <td>{% if doc.is_purchase_item %}<span class="text-success">✓ {{ _("Sim") }}</span>{% else %}{{ _("Não") }}{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% elif doc.standard_rate %}
+    <table class="table price-list-table" style="margin: 0">
+        <thead>
+            <tr>
+                <th>{{ _("Lista") }}</th>
+                <th>{{ _("Preço") }}</th>
+                <th>{{ _("UOM") }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ _("Taxa padrão") }}</td>
+                <td class="rate">
+                    {{ frappe.format_value(doc.standard_rate, {"fieldtype": "Currency", "options": default_currency}) }}
+                </td>
+                <td>{{ doc.stock_uom }}</td>
+            </tr>
+        </tbody>
+    </table>
+    {% else %}
+    <table class="table spec-table" style="margin: 0">
+        <tbody>
+            <tr>
+                <th>{{ _("Preços") }}</th>
+                <td style="color: #8d99a6">{{ _("Sem preços definidos") }}</td>
+            </tr>
+        </tbody>
+    </table>
+    {% endif %}
+    
+    {# ── Rodapé ── #}
+    {# <table class="table" style="margin-top: 24px; border-top: solid 1px #d1d8dd">
+        <tbody>
+            <tr>
+                <td style="border: 0; padding-top: 8px">
+                    <small style="color: #8d99a6">
+                        {{ _("Documento gerado em") }} {{ frappe.utils.format_datetime(frappe.utils.now(), "dd-MM-yyyy HH:mm") }}
+                        {% if doc.modified %} · {{ _("Última alteração") }}: {{ frappe.utils.format_datetime(doc.modified, "dd-MM-yyyy") }}{% endif %}
+                    </small>
+                </td>
+            </tr>
+        </tbody>
+    </table> #}
+    
+    </div>
+    

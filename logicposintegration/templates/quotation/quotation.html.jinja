@@ -246,6 +246,7 @@
             {# {% set line_withholding_tax = line_total * withholding_tax if row.item_group and "serviços" in row.item_group|lower else 0 %} #}
             {% set ns.withholding_tax_total = ns.withholding_tax_total + line_withholding_tax %}
             {% set url = frappe.db.get_value("Item", row.item_code, "url") %}
+            {% set image = frappe.db.get_value("Item", row.item_code, "image") %}
             <tr>
                 <td style="width: 6%">
                     <strong>
@@ -262,17 +263,16 @@
                         <div class="col-12">{{ row.item_name }}</div>
                     </small>
                 </td>
-                <td style="width: 12%" class="text-center">
-                    {% if row.image %}
-                        <img src="{{ row.image }}"
-                             alt="{{ row.item_name }}"
-                             width="42"
-                             height="42"
-                             style="vertical-align: middle"
-                             onerror=" this.style.display = 'none'; this.parentNode.innerHTML = '<small>N/D</small>'; " />
+                <td style="width: 12%" class="text-center"> 
+                        {% if image %} 
+                            <img src="{{ image }}"
+                                alt="{{ row.item_name }}"
+                                width="42"
+                                height="42"
+                                style="vertical-align: middle"/> 
                         {% else %}
                             <small>N/D</small>
-                        {% endif %}
+                        {% endif %} 
                     </td>
                     <td style="width: 7%; text-align: right">
                         <small>{{ row.qty }} {{ row.uom or row.stock_uom }}</small>
