@@ -53,6 +53,10 @@ class PDF(FPDF):
 		self.cell(70, 8, self.footer_description, border=0, align=Align.L) 
 		self.cell(0, 10, f"{self.page_no()}", align=Align.R)
 
+	def write_html(self, text: str, *args, **kwargs):
+		kwargs.setdefault("li_prefix_color", "#000000")
+		return super().write_html(text, *args, **kwargs)
+
 @frappe.whitelist()
 def generate_proposal(article: str, client: str, currency: str, items=None) -> str:
 	try:
@@ -78,13 +82,13 @@ def generate_proposal(article: str, client: str, currency: str, items=None) -> s
 		file_name = f"ppt_{article}_{currency.lower()}_{client.lower()}.pdf" 
 		public_file_path = frappe.utils.get_site_path("public", "files", file_name) 
 		doc.output(public_file_path) 
-		port = frappe.conf.webserver_port or 8080 
+		# port = frappe.conf.webserver_port or 8080 
 		url_base = frappe.utils.get_url()
 
-		if f":{port}" not in url_base:
-			url_base += f":{port}"
-		full_path = url_base + '/files/' + file_name
-		
+		# if f":{port}" not in url_base:
+		# 	url_base += f":{port}"
+		# full_path = url_base + '/files/' + file_name
+		full_path = url_base.rstrip("/") + "/files/" + file_name
 		return full_path
 	except Exception as err:
 		frappe.log_error(frappe.get_traceback(), "Error")
@@ -145,9 +149,9 @@ def _ordered_item_groups(items: list):
 
 
 def add_grouped_prices_table(doc: FPDF, currency: str, items: list):
-	items = items or []
+	# items = items or []
 	doc.set_draw_color(0, 0, 0)
-	col_widths = (88, 22, 38, 42)
+	col_widths = (78, 20, 16, 36, 40)
 	header_ff = FontFace(
 		family="calibri",
 		emphasis="BOLD",
@@ -166,31 +170,33 @@ def add_grouped_prices_table(doc: FPDF, currency: str, items: list):
 
 	with doc.table(
 		col_widths=col_widths,
-		text_align=(Align.L, Align.R, Align.R, Align.R),
+		text_align=(Align.L, Align.C, Align.R, Align.R, Align.R),
 		line_height=6,
 		first_row_as_headings=False,
 	) as table:
 		hrow = table.row()
 		hrow.cell("DESCRIÇÃO", style=header_ff)
+		hrow.cell("IMAGEM", style=header_ff)
 		hrow.cell("QT.", style=header_ff)
 		hrow.cell("PREÇO UNIT.", style=header_ff)
 		hrow.cell("PREÇO TOTAL", style=header_ff)
 
 		if not items:
 			erow = table.row()
-			erow.cell("Sem itens nesta proposta.", colspan=4, style=row_ff, align=Align.C)
+			erow.cell("Sem itens nesta proposta.", colspan=5, style=row_ff, align=Align.C)
 			return
 
 		grand_total = 0.0
 		for _group_name, group_items in _ordered_item_groups(items):
 			grow = table.row()
-			grow.cell(_group_name, colspan=4, style=group_ff, align=Align.L)
+			grow.cell(_group_name, colspan=5, style=group_ff, align=Align.L)
 
 			group_sub = 0.0
 			for item in group_items:
-				desc = item.get("item_name") or item.get("description") or item.get("name") or ""
+				desc = item.get("item_name") or ""
+				image = item.get("image") or ""
 				qty = float(item.get("qty") or 0)
-				rate = float(item.get("rate") or item.get("price_list_rate") or 0)
+				rate = float(item.get("rate") or 0)
 				line = _proposal_line_total(item)
 				oferta = _proposal_is_oferta(item)
 
@@ -198,18 +204,22 @@ def add_grouped_prices_table(doc: FPDF, currency: str, items: list):
 					group_sub += line
 					grand_total += line
 
-				irow = table.row()
+				irow = table.row(min_height= 25 if image else None)
 				irow.cell(str(desc), style=row_ff)
+				if image:
+					irow.cell(img=image, align=Align.C)
+				else:
+					irow.cell("N/D", align=Align.C)
 				irow.cell(_format_pt_amount(qty), style=row_ff)
 				irow.cell(_format_money_proposal(rate, currency), style=row_ff)
 				irow.cell("OFERTA" if oferta else _format_money_proposal(line, currency), style=row_ff)
 
 			srow = table.row()
-			srow.cell("Sub-Total", colspan=3, style=subtotal_ff, align=Align.L)
+			srow.cell("Sub-Total", colspan=4, style=subtotal_ff, align=Align.L)
 			srow.cell(_format_money_proposal(group_sub, currency), style=subtotal_ff)
 
 		trow = table.row()
-		trow.cell("TOTAL", colspan=3, style=total_ff, align=Align.L)
+		trow.cell("TOTAL", colspan=4, style=total_ff, align=Align.L)
 		trow.cell(_format_money_proposal(grand_total, currency), style=total_ff)
 
 
@@ -326,7 +336,7 @@ def fill_q_track(doc: FPDF, article: str, client: str, currency: str, items: lis
 
 	change_title(doc, "1.	APRESENTAÇÃO")
 	doc.write_html("""
-		<p style="line-height:1.7; text-align: justify;">A <strong>Logicpulse</strong> prop&otilde;e um <strong>sistema avan&ccedil;ado com interface Web para efetuar a gest&atilde;o de filas de atendimento ao p&uacute;blico</strong>. <br />Este sistema permite gerir um n&uacute;mero de servi&ccedil;os limitado pelo terminal apresentado, tornando o atendimento mais eficaz e eficiente, ajudando a reduzir o tempo de espera dos utentes aumentando assim a satisfa&ccedil;&atilde;o dos mesmos, com indica&ccedil;&atilde;o de tempo de previs&atilde;o de atendimento. <br />O <strong><span style="color: #1b97d3;">Q</span>.track</strong> permite o <strong>ativar</strong> e <strong>desativar</strong> balc&otilde;es de atendimento atrav&eacute;s da aplica&ccedil;&atilde;o central, toda a gest&atilde;o e intera&ccedil;&atilde;o do software &eacute; feita atrav&eacute;s de um browser (Internet Explorer, Mozilla Firefox, Google Chrome) n&atilde;o necessitando de ser instalado em cada computador nos balc&otilde;es de atendimento.<br />Desta forma, possibilita manter um controlo eficaz e eficiente sobre o fluxo de atendimento, servi&ccedil;os mais requisitados assim como, relat&oacute;rios da rapidez do atendimento de cada colaborador, sendo uma ferramenta que promove a produtividade dos colaboradores destacados nos servi&ccedil;os de atendimento ao p&uacute;blico.</p>
+		<p style="line-height:1.7; text-align: justify;">A <strong>Logicpulse</strong> prop&otilde;e um <strong>sistema avan&ccedil;ado com interface Web para efetuar a gest&atilde;o de filas de atendimento ao p&uacute;blico</strong>. <br />Este sistema permite gerir um n&uacute;mero de servi&ccedil;os limitado pelo terminal apresentado, tornando o atendimento mais eficaz e eficiente, ajudando a reduzir o tempo de espera dos utentes aumentando assim a satisfa&ccedil;&atilde;o dos mesmos, com indica&ccedil;&atilde;o de tempo de previs&atilde;o de atendimento. <br />O <strong><font color="#1b97d3">Q</font>.track</strong> permite o <strong>ativar</strong> e <strong>desativar</strong> balc&otilde;es de atendimento atrav&eacute;s da aplica&ccedil;&atilde;o central, toda a gest&atilde;o e intera&ccedil;&atilde;o do software &eacute; feita atrav&eacute;s de um browser (Internet Explorer, Mozilla Firefox, Google Chrome) n&atilde;o necessitando de ser instalado em cada computador nos balc&otilde;es de atendimento.<br />Desta forma, possibilita manter um controlo eficaz e eficiente sobre o fluxo de atendimento, servi&ccedil;os mais requisitados assim como, relat&oacute;rios da rapidez do atendimento de cada colaborador, sendo uma ferramenta que promove a produtividade dos colaboradores destacados nos servi&ccedil;os de atendimento ao p&uacute;blico.</p>
 	""")
 	doc.write_html("""
 		<p style="text-align: justify;"><strong><em><u>As VANTAGENS do sistema são:</u></em></strong></p>
@@ -344,31 +354,25 @@ def fill_q_track(doc: FPDF, article: str, client: str, currency: str, items: lis
  
 	change_title(doc, "2.	Q.TRACK")
 	doc.write_html("""
-		<p style="line-height: 1.7; text-align: justify;">O <strong><a href="#">Q</a>.track</strong> é uma solução pensada e dimensionada para efetuar a gestão de atendimento em qualquer tipo de local, com qualquer tipo de requisitos.<br /> Apresentamos um breve resumo do sucesso da aplicação na área da gestão de filas, esta baseia-se em vários projetos implementados com sucesso no terreno, e dos quais destacamos, o projeto no Centro Hospitalar de Coimbra, unidade dos Covões. <br />Este projeto consiste num sistema de gestão de consultas totalmente integrado com o software de gestão SONHO. Nesta instalação, o utente identifica-se na receção do serviço e confirma a sua consulta, esta informação é adicionada ao sistema do médico que está a realizar as consultas, possibilitando ao médico aceder a informação em tempo real dos utentes em espera e realizar a chamada automática dos utentes (pelo seu nome) através do ecrã instalado na sala de espera.</p>
+		<p style="line-height: 1.7; text-align: justify;">O <strong><font color="#1b97d3">Q</font>.track</strong> é uma solução pensada e dimensionada para efetuar a gestão de atendimento em qualquer tipo de local, com qualquer tipo de requisitos.<br /> Apresentamos um breve resumo do sucesso da aplicação na área da gestão de filas, esta baseia-se em vários projetos implementados com sucesso no terreno, e dos quais destacamos, o projeto no Centro Hospitalar de Coimbra, unidade dos Covões. <br />Este projeto consiste num sistema de gestão de consultas totalmente integrado com o software de gestão SONHO. Nesta instalação, o utente identifica-se na receção do serviço e confirma a sua consulta, esta informação é adicionada ao sistema do médico que está a realizar as consultas, possibilitando ao médico aceder a informação em tempo real dos utentes em espera e realizar a chamada automática dos utentes (pelo seu nome) através do ecrã instalado na sala de espera.</p>
 		<p style="text-align: justify;"><strong>O sistema inclui:</strong></p>
 		<ul style="line-height: 1.7;">
 			<li style="text-align: justify;">• Quiosque dispensador de senhas;</li>
 			<li style="text-align: justify;">• Ecrã LCD (opcional);</li>
 			<li style="text-align: justify;">• Pc Box (opcional);</li>
-			<li style="text-align: justify;">• SOFTWARE de Gestão de Filas “<strong><a href="#">Q</a>.track</strong>” multiposto;</li>
+			<li style="text-align: justify;">• SOFTWARE de Gestão de Filas “<strong><font color="#1b97d3">Q</font>.track</strong>” multiposto;</li>
 			<li style="text-align: justify;">• INSTALAÇÃO no local;</li>
 			<li style="text-align: justify;">• FORMAÇÃO a utilizadores</li>
 		</ul>
 		<p> </p>
-	""", tag_styles={
-			"a": FontFace(color="#1b97d3")
-		}
-	)
+	""")
 
 	doc.image(get_image(article, "Picture5.png"), w=188.72, h=100.32)
 	change_title(doc, "2.1.	Descrição do Sistema")
 	doc.write_html("""
-		<p style="line-height: 1.7; text-align: justify;">A solução <strong><a href="#">Q</a>.track</strong> é uma ferramenta modular e de baixo custo que lhe permite gerir as filas de espera/atendimento de 1 ou mais locais com múltiplos serviços, fornecendo dados em tempo real através da web de forma a poderem ser tomadas decisões por parte dos gestores sobre o funcionamento do atendimento dos seus serviços.</p> 
+		<p style="line-height: 1.7; text-align: justify;">A solução <strong><font color="#1b97d3">Q</font>.track</strong> é uma ferramenta modular e de baixo custo que lhe permite gerir as filas de espera/atendimento de 1 ou mais locais com múltiplos serviços, fornecendo dados em tempo real através da web de forma a poderem ser tomadas decisões por parte dos gestores sobre o funcionamento do atendimento dos seus serviços.</p> 
 		<p></p>
-	""", tag_styles={
-			"a": FontFace(color="#1b97d3")
-		}
-	)
+	""")
 	paragraph(doc)
 	doc.image(get_image(article, "28.jpg"), w=188.72, h=100.32)
 	doc.image(get_image(article, "27.png"), w=188.72, h=50.32)
@@ -376,7 +380,7 @@ def fill_q_track(doc: FPDF, article: str, client: str, currency: str, items: lis
 		<p style="line-height: 1.7; text-align: justify;">Toda a solução foi pensada de forma a se adaptar a diferentes necessidades de configuração dos serviços e de diferentes tipos de hardware utilizado, podendo ser utilizado com dispensadores de senhas multimédia ou simples dispensadores de botão, podendo mostrar a informação das filas em ecrãs multimédia com publicidade associada (e Corporate TV) ou então com simples painéis de chamada numéricos. Desta forma conseguimos satisfazer desde o simples atendimento numa empresa até grandes serviços de atendimentos públicos.</p>
 	""")
 	doc.write_html("""
-		<p><strong>As principais caraterísticas do <a href="#">Q</a>.track</strong> <strong>são: </strong></p>
+		<p><strong>As principais caraterísticas do <font color="#1b97d3">Q</font>.track</strong> <strong>são: </strong></p>
 		<ul style="line-height: 1.7;">
 			<li>• Melhoria da imagem da sua organização</li>
 			<li>• Aumento da satisfação dos clientes</li>
@@ -390,20 +394,14 @@ def fill_q_track(doc: FPDF, article: str, client: str, currency: str, items: lis
 			<li>• Inserção de publicidade sobre produtos ou serviços aproveitando o tempo de espera dos clients</li>
 		</ul>
 		<p> </p>
-	""", tag_styles={
-			"a": FontFace(color="#1b97d3")
-		}
-	)
+	""")
 
 	subtitle(doc, "2.1.1.	Aplicações do Q.track")
 
 	doc.write_html("""
-		<p style="line-height: 1.7; text-align: justify;">Como o sistema <strong><a href="#">Q</a>.track</strong> assenta numa arquitetura distribuída, existem diversas aplicações que podem funcionar de forma autónoma, no entanto é possível utilizar todas as aplicações da solução <strong><a href="#">Q</a>.track</strong> através de interfaces web utilizando a nova tecnologia XAML Browser Application (XBAP).<br/>
+		<p style="line-height: 1.7; text-align: justify;">Como o sistema <strong><font color="#1b97d3">Q</font>.track</strong> assenta numa arquitetura distribuída, existem diversas aplicações que podem funcionar de forma autónoma, no entanto é possível utilizar todas as aplicações da solução <strong><font color="#1b97d3">Q</font>.track</strong> através de interfaces web utilizando a nova tecnologia XAML Browser Application (XBAP).<br/>
 		Apresentamos de seguida o diagrama com as principais aplicações do sistema, seguida de uma pequena explicação.</p>
-	""", tag_styles={
-			"a": FontFace(color="#1b97d3")
-		}
-	)
+	""")
 
 	doc.image(get_image(article, "Picture6.png"), w=188.72, h=80.32)
 	doc.add_page()
@@ -417,11 +415,8 @@ def fill_q_track(doc: FPDF, article: str, client: str, currency: str, items: lis
 	doc.add_page()
 	subtitle(doc, "2.1.3.	QComposer")
 	doc.write_html("""
-		<p style="line-height: 1.7; text-align: justify;">A aplicação <strong>QComposer</strong> possibilita ao gestor/administrador do <strong><a href="#">Q</a>.track</strong> a geração dinâmica dos conteúdos que são mostrados no display de chamada.<br /> Esta composição dos conteúdos é efetuada através de simples “drag and drop” e possibilita a inclusão de texto, vídeos, slideshow de imagens, Apresentação PowerPoint, conteúdos RSS, TV, streaming de vídeo, etc.</p>
-	""", tag_styles={
-			"a": FontFace(color="#1b97d3")
-		}
-	)
+		<p style="line-height: 1.7; text-align: justify;">A aplicação <strong>QComposer</strong> possibilita ao gestor/administrador do <strong><font color="#1b97d3">Q</font>.track</strong> a geração dinâmica dos conteúdos que são mostrados no display de chamada.<br /> Esta composição dos conteúdos é efetuada através de simples “drag and drop” e possibilita a inclusão de texto, vídeos, slideshow de imagens, Apresentação PowerPoint, conteúdos RSS, TV, streaming de vídeo, etc.</p>
+	""")
 	paragraph(doc, 10)
 	subtitle(doc, "2.1.4.	QKiosk")
 	doc.write_html("""
@@ -435,11 +430,11 @@ def fill_q_track(doc: FPDF, article: str, client: str, currency: str, items: lis
 	doc.write_html(""" 
 		<p style="line-height: 1.7; text-align: justify;">A aplicação <strong>QUser</strong> permite aos funcionários de atendimento:</p>
 		<ul style="line-height: 1.7;>
-			<li style="text-align: justify;">•	Escolher o balcão a ativar;</li>
-			<li style="text-align: justify;">•	Ativar os serviços que o utilizador pretender;</li>
-			<li style="text-align: justify;">•	Chamar os utentes;</li>
-			<li style="text-align: justify;">•	Escolher o tipo de processamento do utente a ser chamado através do tempo de espera do utente, da fila de espera, e do tempo de atendimento do serviço. Para além destes modos de seleção, poderá ser ativada a prioridades dos serviços;</li>
-			<li style="text-align: justify;">•	Disponibiliza a média de atendimentos do utilizador que está a atender, o número de pessoas atendidas, o próximo utente a ser chamado, e mostrar as últimas 18 sessões que o utilizador iniciou mostrando os utentes atendidos em cada uma dessas sessões através de um gráfico.</li>
+			<li style="text-align: justify;">Escolher o balcão a ativar;</li>
+			<li style="text-align: justify;">Ativar os serviços que o utilizador pretender;</li>
+			<li style="text-align: justify;">Chamar os utentes;</li>
+			<li style="text-align: justify;">Escolher o tipo de processamento do utente a ser chamado através do tempo de espera do utente, da fila de espera, e do tempo de atendimento do serviço. Para além destes modos de seleção, poderá ser ativada a prioridades dos serviços;</li>
+			<li style="text-align: justify;">Disponibiliza a média de atendimentos do utilizador que está a atender, o número de pessoas atendidas, o próximo utente a ser chamado, e mostrar as últimas 18 sessões que o utilizador iniciou mostrando os utentes atendidos em cada uma dessas sessões através de um gráfico.</li>
 		</ul>
 	""")
 	paragraph(doc, 10)
@@ -450,14 +445,14 @@ def fill_q_track(doc: FPDF, article: str, client: str, currency: str, items: lis
 	doc.write_html("""
 		<p style="line-height: 1.7; text-align: justify;">Toda a gestão da aplicação é efetuada no <strong>QWebAdmin</strong> através de um browser Web, possibilitando ao administrador/gestor efetuar a configuração dos postos de atendimento e consultar alguns relatórios de atendimento em qualquer parte do mundo. Esta aplicação tem como principais caraterísticas:</p>
 		<ul style="line-height: 1.7;">
-			<li style="text-align: justify;">•	Dashboard com dados estatísticos em tempo real;</li>
-			<li style="text-align: justify;">•	Adicionar/Editar/Desativar serviços;</li>
-			<li style="text-align: justify;">•	Associar um posto de atendimento a um serviço;</li>
-			<li style="text-align: justify;">•	Adicionar/Editar/desativar postos de atendimento + Departamentos;</li>
-			<li style="text-align: justify;">•	Adicionar/Editar/desativar utilizadores;</li>
-			<li style="text-align: justify;">•	Adicionar/Editar mensagens para o QInfoscreen;</li>
-			<li style="text-align: justify;">•	Gestão de todos os conteúdos mutimédia e templates do QInfoscreen + QKiosk;</li>
-			<li style="text-align: justify;">•	Consulta e geração de relatórios (atendimento por utilizador e afluência ao serviço)</li>
+			<li style="text-align: justify;">Dashboard com dados estatísticos em tempo real;</li>
+			<li style="text-align: justify;">Adicionar/Editar/Desativar serviços;</li>
+			<li style="text-align: justify;">Associar um posto de atendimento a um serviço;</li>
+			<li style="text-align: justify;">Adicionar/Editar/desativar postos de atendimento + Departamentos;</li>
+			<li style="text-align: justify;">Adicionar/Editar/desativar utilizadores;</li>
+			<li style="text-align: justify;">Adicionar/Editar mensagens para o QInfoscreen;</li>
+			<li style="text-align: justify;">Gestão de todos os conteúdos mutimédia e templates do QInfoscreen + QKiosk;</li>
+			<li style="text-align: justify;">Consulta e geração de relatórios (atendimento por utilizador e afluência ao serviço)</li>
 		</ul>
 	""")
 	paragraph(doc, 10)
@@ -478,13 +473,13 @@ def fill_q_track(doc: FPDF, article: str, client: str, currency: str, items: lis
 	doc.write_html("""
 		<p style="line-height: 1.7; text-align: justify;"><strong><em><u>Serviços incluídos</u></em></strong></p>
 		<ul style="line-height: 1.7;">
-			<li style="text-align: justify;">•	Montagem e fixação do Hardware;</li>
-			<li style="text-align: justify;">•	Todas as ligações (rede elétrica, Ethernet, etc.) deverão estar nos locais de instalação;</li>
+			<li style="text-align: justify;">Montagem e fixação do Hardware;</li>
+			<li style="text-align: justify;">Todas as ligações (rede elétrica, Ethernet, etc.) deverão estar nos locais de instalação;</li>
 		</ul>
 		<p style="line-height: 1.0; text-align: justify;">(Nota: distâncias de cablagem superiores a 2 metros serão orçamentadas em separado.)</p>
 		<ul style="line-height: 1.7;">
-			<li style="text-align: justify;">•	Instalação de softwares no servidor e de 1 posto de trabalho (no caso de licença adicional) + Instalação da aplicação <strong>Q</strong><strong>.track</strong> nos Postos de atendimento (nº de instalação dependendo da versão da licença);</li>
-			<li style="text-align: justify;">•	Formação a 1 “master-user” e utilizadores (todas as formações num único dia).</li>
+			<li style="text-align: justify;">Instalação de softwares no servidor e de 1 posto de trabalho (no caso de licença adicional) + Instalação da aplicação <strong><font color="#1b97d3">Q</font>.track</strong> nos Postos de atendimento (nº de instalação dependendo da versão da licença);</li>
+			<li style="text-align: justify;">Formação a 1 “master-user” e utilizadores (todas as formações num único dia).</li>
 		</ul>
 		<p><strong><em><u>Exclusões à proposta</u></em></strong></p>
 		<p style="line-height: 1.7; text-align: justify;">Não estão incluídos trabalhos de construção civil para instalação dos equipamentos nem cablagem necessária. <br />Esta proposta não inclui deslocações adicionais que sejam necessárias por impossibilidade de acesso ou avaria dos equipamentos já existentes que impossibilite a conclusão da instalação, e que vão para além do que incluído nesta proposta. Se existir uma deslocação adicional será cobrada com base numa taxa de <strong>1 USD</strong>/ km.</p>
@@ -526,7 +521,6 @@ def fill_q_track(doc: FPDF, article: str, client: str, currency: str, items: lis
 	doc.set_page_background(get_cover(article, '125.png'))
 	doc.add_page()
 	
-
 def get_image(article: str, img_name: str) -> str:
 	path = os.path.join(asset_dir, article, img_name)
 	if not os.path.exists(path):
