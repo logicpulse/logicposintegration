@@ -11,6 +11,10 @@ datas = {
 	"q.track": {
 		"footer_description": "iPQ02.04-01 - Logicpulse - Gestão de Filas - Q.track", 
 		"last_page": 16,
+	},
+	"q.track.survey": {
+		"footer_description": "iPQ02.04-02 - Logicpulse - Avaliação de Satisfação - Q.track / survey.track",
+		"last_page": 23,
 	}
 }
 
@@ -250,60 +254,11 @@ def add_fonts(doc: FPDF):
 def fill_document(doc: FPDF, article: str, client: str, currency: str, items: list):
 	if article == "q.track":
 		fill_q_track(doc, article, client, currency, items)
+	elif article == "q.track.survey":
+		fill_q_track_survey(doc, article, client, currency, items)
 
 def fill_q_track(doc: FPDF, article: str, client: str, currency: str, items: list):
-	subtitle(doc, "INFO DOCUMENTO")
-	# paragraph(doc)
-
-	client_data = frappe.db.get_value(
-		"Customer", 
-		client, 
-		["customer_name", "first_name", "last_name", "email_id", "mobile_no"], 
-		as_dict=1
-	)
-	
-	user = frappe.db.get_value(
-		"User",
-		{"name": frappe.session.user},
-		["full_name", "email", "phone", "mobile_no"],
-		as_dict=1
-	)
-
-	TABLE_DATA = (
-		("Autores:", f"{user.full_name} ▪ {user.email} ▪ Tel: {user.mobile_no}"),
-		("Destinatários:", f"{client_data.customer_name}"),
-		("Contacto:", f"{client_data.first_name} {client_data.last_name} ▪ {client_data.email_id} ▪ Tel: {client_data.mobile_no}"),
-		("Histórico:", ""),
-		("", "")
-	)
-	
-	doc.set_font(style="", size=11)
-	with doc.table(col_widths=(25, 75), first_row_as_headings=False) as table:
-		for data_row in TABLE_DATA:
-			row = table.row()
-			is_first = True
-			for datum in data_row:
-				if is_first:
-					row.cell(datum, style=FontFace(emphasis="BOLD"), border="TOP")
-				else:
-					row.cell(datum, border="TOP")
-				is_first = False
-	
-	TABLE_DATA = (
-		("DATA:", "VERSÃO", "DESCRIÇÃO", "AUTORES"), 
-		(f"{date.today()}", "00", "Criação do Documento", f"{user.full_name}")
-	)
-
-	doc.set_font(style="", size=9)
-	with doc.table(col_widths=(20, 10, 40, 30), headings_style=FontFace(emphasis="BOLD", fill_color=(166, 166, 166))) as table:
-		for data_row in TABLE_DATA:
-			row = table.row()
-			for datum in data_row:
-				row.cell(datum)
-	
-	paragraph(doc) 
-	doc.image(get_image(article, "5.png"), w=148.02, h=148.02)
-	doc.add_page()
+	info_section(doc, article, client, "5.png")
 	subtitle(doc, "INDÍCE")
 	# paragraph(doc)
 
@@ -520,7 +475,63 @@ def fill_q_track(doc: FPDF, article: str, client: str, currency: str, items: lis
 	doc.image(get_image(article, "parceiros.png"), w=188.72, h=180.32)
 	doc.set_page_background(get_cover(article, '125.png'))
 	doc.add_page()
+
+def fill_q_track_survey(doc: FPDF, article: str, client: str, currency: str, items: list):
+	info_section(doc, article, client, "8.png")
+	subtitle(doc, "INDÍCE")
+
+def info_section(doc: FPDF, article: str, client: str, article_img_name: str):
+	subtitle(doc, "INFO DOCUMENTO") 
+	client_data = frappe.db.get_value(
+		"Customer", 
+		client, 
+		["customer_name", "first_name", "last_name", "email_id", "mobile_no"], 
+		as_dict=1
+	)
 	
+	user = frappe.db.get_value(
+		"User",
+		{"name": frappe.session.user},
+		["full_name", "email", "phone", "mobile_no"],
+		as_dict=1
+	)
+
+	TABLE_DATA = (
+		("Autores:", f"{user.full_name} ▪ {user.email} ▪ Tel: {user.mobile_no}"),
+		("Destinatários:", f"{client_data.customer_name}"),
+		("Contacto:", f"{client_data.first_name} {client_data.last_name} ▪ {client_data.email_id} ▪ Tel: {client_data.mobile_no}"),
+		("Histórico:", ""),
+		("", "")
+	)
+	
+	doc.set_font(style="", size=11)
+	with doc.table(col_widths=(25, 75), first_row_as_headings=False) as table:
+		for data_row in TABLE_DATA:
+			row = table.row()
+			is_first = True
+			for datum in data_row:
+				if is_first:
+					row.cell(datum, style=FontFace(emphasis="BOLD"), border="TOP")
+				else:
+					row.cell(datum, border="TOP")
+				is_first = False
+	
+	TABLE_DATA = (
+		("DATA:", "VERSÃO", "DESCRIÇÃO", "AUTORES"), 
+		(f"{date.today()}", "00", "Criação do Documento", f"{user.full_name}")
+	)
+
+	doc.set_font(style="", size=9)
+	with doc.table(col_widths=(20, 10, 40, 30), headings_style=FontFace(emphasis="BOLD", fill_color=(166, 166, 166))) as table:
+		for data_row in TABLE_DATA:
+			row = table.row()
+			for datum in data_row:
+				row.cell(datum)
+	
+	paragraph(doc) 
+	doc.image(get_image(article, article_img_name), w=148.02, h=148.02)
+	doc.add_page()
+
 def get_image(article: str, img_name: str) -> str:
 	path = os.path.join(asset_dir, article, img_name)
 	if not os.path.exists(path):
