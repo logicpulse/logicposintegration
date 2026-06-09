@@ -1,0 +1,76 @@
+.footer-fixo {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+}
+
+.page-wrapper {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.content {
+    flex: 1;
+}
+
+.footer-final {
+    margin-top: auto;
+}
+
+html, body {
+    height: 100%;
+}
+
+.payment-terms-section {
+    margin-top: 14px;
+    border: 1px solid #c5d0db;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #f7f9fb;
+}
+
+.payment-terms-section .payment-terms-heading {
+    background: #F0F4F7;
+    border-bottom: 1px solid #c5d0db;
+    padding: 7px 10px;
+}
+
+.payment-terms-section .payment-terms-heading strong {
+    letter-spacing: 0.3px;
+}
+
+.payment-terms-table {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.payment-terms-table thead th {
+    background: #edf2f7;
+    border-bottom: 1px solid #c5d0db;
+    border-top: none;
+    font-weight: 600;
+    padding: 6px 10px !important; 
+}
+
+.payment-terms-table tbody td {
+    border-top: 1px solid #e4e9ef;
+    padding: 6px 10px !important;
+    vertical-align: middle;
+}
+
+.payment-terms-table tbody tr:nth-child(even) td {
+    background: #f9fbfd;
+}
+
+.payment-terms-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.payment-terms-fallback {
+    padding: 8px 10px;
+    background: #fff;
+}
