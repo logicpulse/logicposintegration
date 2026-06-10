@@ -4,7 +4,7 @@ import json as _json
 from datetime import datetime, timezone
 
 _POS_TOKEN_CACHE_KEY = "logicpos_sign_in_token"
-_POS_TOKEN_DEFAULT_TTL = 3300  # fallback de 55 min se não conseguir ler o exp do JWT
+_POS_TOKEN_DEFAULT_TTL = 3300  # fallback de 55 min se não conseguir ler o exp  do JWT
 
 def _get_requests():
 	"""Import requests at runtime and raise a clear error if missing.
@@ -40,20 +40,20 @@ def get_pos_base_url(company: str | None = None) -> str:
         if not company:
             frappe.throw("Empresa não informada")
 
-    company = frappe.db.get_value(
+    company_doc = frappe.db.get_value(
         "Company",
         company,
         ["base_url", "port"],
         as_dict=True
     )
 
-    if not company or not company.base_url:
+    if not company_doc or not company_doc.base_url:
         frappe.throw("Base URL não configurada na empresa")
 
     return (
-        f"{company.base_url}:{company.port}"
-        if company.port
-        else company.base_url
+        f"{company_doc.base_url}:{company_doc.port}"
+        if company_doc.port
+        else company_doc.base_url
     )
 
 

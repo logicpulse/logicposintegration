@@ -1,5 +1,6 @@
 import frappe
 from logicposintegration.logicpos_integration.utils import (
+    _format_pos_login_error,
     _get_requests,
     get_pos_auth_headers, 
     get_pos_base_url, 
@@ -100,3 +101,51 @@ def get_value_by_currency(currency: str, values: dict) -> float | None:
 	if field:
 		return values.get(field)
 	return None
+
+@frappe.whitelist()
+def get_on_hand_total_for_article(code: str, company: str | None = None) -> dict:
+    requests = _get_requests()
+
+    if not code:
+        return {
+            "found": False,
+            "reason": "Código não informado"
+        } 
+
+    if not company:
+        company = get_user_company()
+
+    try:
+        response = requests.get(
+            f"{get_pos_base_url(company)}/articles/stocks/total",
+            headers=get_pos_auth_headers(with_content_type=False),
+            params={"code": code},
+            timeout=15
+        )
+
+        if response.status_code == 400:
+            return {
+                "found": False,
+                "reason": _format_pos_login_error(response),
+                "code": code,
+            }
+
+        if response.status_code == 404:
+            return {
+                "found": False,
+                "reason": "Artigo não encontrado no POS",
+                "code": code,
+            }
+
+        response.raise_for_status()
+
+        return {
+            "found": True,
+            "data": response.json()
+        }
+    except requests.exceptions.RequestException as e:
+        frappe.log_error(
+            title="Erro técnico ao consumir API do POS",
+            message=str(e)
+        ) 
+        frappe.throw("Erro de comunicação com o POS")
