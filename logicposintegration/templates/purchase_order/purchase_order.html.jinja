@@ -15,6 +15,9 @@
 {% set supplier_contact = frappe.db.get_value('Contact', _contact_name, ['first_name', 'last_name', 'email_id'], as_dict=True) if _contact_name else None %}
 
 {% set bank_account = frappe.db.get_value("Bank Account", {"company": doc.company}, ["bank", "iban"], as_dict=1) if doc.company else None %}
+{% set shipping_address_doc = frappe.db.get_value('Address', doc.shipping_address, ['address_title', 'address_line1', 'address_line2', 'city', 'state', 'country', 'pincode', 'phone'], as_dict=True) if doc.shipping_address else none %}
+{% set shipping_address_text = doc.shipping_address_display|striptags|trim if doc.shipping_address_display else "" %}
+{% set has_shipping_address = shipping_address_doc or shipping_address_text %}
 {% set ns = namespace(discount_total=0.0, sub_total=0.0, withholding_tax_total=0.0, iva_total=0.0) %}
 
 <table class="table" style="margin-top: 0; border-bottom: solid 1px #d1d8dd">
@@ -178,14 +181,6 @@
             <td colspan="9" class="text-left">
                 <small>
                     <strong>Moeda:</strong>{{ frappe.db.get_value("Currency", doc.currency, "currency_name") }} 
-                    {# <strong>Banco:</strong>{{ bank_account.bank if bank_account else "N/D" }} |
-                    <strong>IBAN:</strong>
-                    {% if bank_account and bank_account.iban %}
-                        {% set clean_iban = bank_account.iban.replace(' ', '') %}
-                        {{ clean_iban | batch(4) | map('join', '') | join(' ') }}
-                    {% else %}
-                        N/D
-                    {% endif %} #}
                 </small>
             </td>
         </tr>
@@ -355,6 +350,30 @@
         </tr>
     </tbody>
 </table>
+
+{% if has_shipping_address %}  
+<div class="payment-terms-section">
+    <div class="shipping-address-heading">
+        <strong><small>ENDEREÇO DE ENVIO</small></strong>
+    </div>
+    <div class="shipping-address-body">
+        <small>
+            {% if shipping_address_doc %}
+                {% if shipping_address_doc.address_title %}
+                    <strong>{{ shipping_address_doc.address_title }}</strong> —
+                {% endif %}
+                {{ [shipping_address_doc.address_line1, shipping_address_doc.address_line2, shipping_address_doc.city, shipping_address_doc.state, shipping_address_doc.pincode, shipping_address_doc.country] | select | join(", ") }}
+                {% if shipping_address_doc.phone %}
+                    | Tel: {{ shipping_address_doc.phone }}
+                {% endif %}
+            {% else %}
+                {{ shipping_address_text }}
+            {% endif %}
+        </small>
+    </div>
+</div>
+{% endif %}
+
 {% if doc.payment_schedule %}
     <div class="payment-terms-section">
         <div class="payment-terms-heading">

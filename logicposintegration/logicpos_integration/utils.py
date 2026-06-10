@@ -3,7 +3,7 @@ import base64
 import json as _json
 from datetime import datetime, timezone
 
-_POS_TOKEN_CACHE_KEY = "logicpos_auth_token"
+_POS_TOKEN_CACHE_KEY = "logicpos_sign_in_token"
 _POS_TOKEN_DEFAULT_TTL = 3300  # fallback de 55 min se não conseguir ler o exp do JWT
 
 def _get_requests():
@@ -70,6 +70,10 @@ def get_user_company():
     if user == "Guest":
         frappe.throw("Utilizador não autenticado")
 
+    return _get_company_for_user(user)
+
+
+def _get_company_for_user(user: str) -> str:
     companies = frappe.get_all(
         "User Permission",
         filters={
@@ -82,7 +86,6 @@ def get_user_company():
     if not companies:
         frappe.throw("Utilizador não tem empresa associada")
 
-    # regra: primeira empresa permitida
     return companies[0]
 
 @frappe.whitelist()
@@ -127,16 +130,22 @@ def get_pos_country_by_code(code, company: str | None = None):
         frappe.throw("Erro de comunicação com o POS")
 
 @frappe.whitelist()
-def login_to_pos(company: str):
-    user = frappe.session.user
-    if user == "Guest":
+def login_to_pos(company: str | None = None, user: str | None = None, force: bool | int = False):
+    target_user = user or frappe.session.user
+    if target_user == "Guest":
         frappe.throw("Utilizador não autenticado")
 
-    cached = get_pos_token(user)
-    if cached:
+    if target_user != frappe.session.user and not frappe.has_permission("User", ptype="write"):
+        frappe.throw("Sem permissão para testar a conexão POS deste utilizador")
+
+    if not company:
+        company = _get_company_for_user(target_user)
+
+    if not frappe.utils.cint(force) and get_pos_token(target_user):
         return {"success": True, "message": "Login no POS já realizado (token em cache)"}
 
-    _do_login(user, company)
+    clear_pos_token(target_user)
+    _do_login(target_user, company)
     return {"success": True, "message": "Login no POS realizado com sucesso"}
 
 
@@ -236,31 +245,67 @@ def pos_request(method: str, endpoint: str, company: str | None = None, **kwargs
 
     return response
 
+def _extract_pos_token(response) -> str:
+    """Extrai o JWT da resposta 200 de /auth/sign-in (JSON string)."""
+    try:
+        data = response.json()
+        if isinstance(data, str):
+            return data.strip()
+    except Exception:
+        pass
+
+    return (response.text or "").strip().strip('"')
+
+
+def _format_pos_login_error(response) -> str:
+    """Formata a resposta de erro do POS (400, etc.)."""
+    try:
+        data = response.json()
+    except Exception:
+        preview = (response.text or "")[:400]
+        return preview or f"HTTP {response.status_code}"
+
+    if not isinstance(data, dict):
+        return str(data)
+
+    parts: list[str] = []
+    if data.get("title"):
+        parts.append(data["title"])
+    if data.get("detail"):
+        parts.append(data["detail"])
+
+    for err in data.get("errors") or []:
+        if not isinstance(err, dict):
+            continue
+        name = err.get("name") or ""
+        reason = err.get("reason") or ""
+        if name and reason:
+            parts.append(f"{name}: {reason}")
+        elif reason:
+            parts.append(reason)
+        elif name:
+            parts.append(name)
+
+    return " — ".join(parts) if parts else f"HTTP {response.status_code}"
+
+
 def _do_login(user: str, company: str | None = None) -> None:
     """Login silencioso ao POS (sem whitelist). Guarda o novo token em cache."""
-    re = _get_re()
-    _guid_pattern = re.compile(
-        r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-        re.IGNORECASE
-    )
     user_doc = frappe.get_doc("User", user)
 
-    for field, label in [("terminal_id", "Terminal ID"), ("user_id", "User ID")]:
-        val = getattr(user_doc, field, None)
-        if not val or not _guid_pattern.match(val):
-            frappe.throw(f"{label} não configurado ou não está no formato GUID")
+    if not user_doc.pos_email:
+        frappe.throw("Email POS não configurado para o utilizador")
 
     if not user_doc.pin:
         frappe.throw("PIN não configurado para o utilizador")
 
     requests = _get_requests()
-    login_url = _pos_url(company, "/auth/login")
+    login_url = _pos_url(company, "/auth/sign-in")
     response = requests.post(
         login_url,
         json={
-            "TerminalId": user_doc.terminal_id,
-            "UserId": user_doc.user_id,
-            "Pin": user_doc.pin,
+            "login": user_doc.pos_email,
+            "password": user_doc.pin,
         },
         timeout=10,
     )
@@ -273,12 +318,16 @@ def _do_login(user: str, company: str | None = None) -> None:
         )
         if response.status_code == 404:
             frappe.throw(
-                "O POS devolveu 404 em /auth/login. Confirme na empresa o campo Base URL "
+                "O POS devolveu 404 em /auth/sign-in. Confirme na empresa o campo Base URL "
                 "(inclua o prefixo da API se existir, ex.: …/api) e a porta; o pedido foi registado nos erros com a URL exata."
             )
-        frappe.throw(f"Erro ao fazer login no POS (HTTP {response.status_code})")
+        frappe.throw(f"Erro ao fazer login no POS: {_format_pos_login_error(response)}")
 
-    _save_pos_token(user, response.text.strip().strip('"'))
+    token = _extract_pos_token(response)
+    if not token:
+        frappe.throw("O POS não devolveu token após login")
+
+    _save_pos_token(user, token)
 
 
 def _success(message: str):
