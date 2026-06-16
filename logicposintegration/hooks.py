@@ -26,7 +26,7 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/logicposintegration/css/logicposintegration.css"
-# app_include_js = "/assets/logicposintegration/js/logicposintegration.js"
+app_include_js = "/assets/logicposintegration/js/pos_stock_grid.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/logicposintegration/css/logicposintegration.css"
