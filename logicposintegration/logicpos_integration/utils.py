@@ -225,20 +225,27 @@ def pos_request(method: str, endpoint: str, company: str | None = None, **kwargs
     requests = _get_requests()
     url = _pos_url(company, endpoint)
     timeout = kwargs.pop("timeout", 15)
+    with_content_type = method.upper() in ("POST", "PUT", "PATCH")
 
     def _do_request():
         return requests.request(
             method,
             url,
-            headers=get_pos_auth_headers(),
+            headers=get_pos_auth_headers(with_content_type=with_content_type),
             timeout=timeout,
             **kwargs,
         )
 
-    response = _do_request()
+    user = frappe.session.user
+
+    try:
+        response = _do_request()
+    except requests.exceptions.ConnectionError:
+        clear_pos_token(user)
+        _do_login(user, company)
+        response = _do_request()
 
     if response.status_code == 401:
-        user = frappe.session.user
         clear_pos_token(user)
         _do_login(user, company)
         response = _do_request()

@@ -46,6 +46,7 @@ app_include_js = "/assets/logicposintegration/js/pos_stock_grid.js"
 doctype_js = {
 	"Quotation": "public/js/quotation.js",
 	"User": "public/js/user.js",
+	"Purchase Order": "public/js/purchase_order.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
