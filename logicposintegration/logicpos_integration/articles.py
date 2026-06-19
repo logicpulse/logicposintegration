@@ -1,4 +1,5 @@
 import frappe
+from frappe.utils import get_datetime
 from logicposintegration.logicpos_integration.utils import (
     _format_pos_login_error,
     _get_requests,
@@ -148,4 +149,91 @@ def get_on_hand_total_for_article(code: str, company: str | None = None) -> dict
             title="Erro técnico ao consumir API do POS",
             message=str(e)
         ) 
+        frappe.throw("Erro de comunicação com o POS")
+
+def _build_stock_movement_item(item_code: str, qty: float, rate: float, company: str) -> dict:
+    article = get_article_by_code(item_code, company)
+    if not article.get("found"):
+        frappe.throw(f"Artigo {item_code} não encontrado no POS")
+
+    article_id = article.get("data", {}).get("id")
+    if not article_id:
+        frappe.throw(f"Artigo {item_code} sem ID no POS")
+
+    return {
+        "articleId": article_id,
+        "quantity": float(qty),
+        "price": float(rate),
+    }
+
+
+@frappe.whitelist()
+def update_stock(
+    supplier_id: str,
+    company: str,
+    items,
+    date=None,
+    document_number=None,
+    external_document=None,
+):
+    requests = _get_requests()
+
+    if not supplier_id or not company:
+        frappe.throw("Parâmetros inválidos")
+
+    items = frappe.parse_json(items)
+    if not items or not isinstance(items, list):
+        frappe.throw("Itens não informados")
+
+    movement_items = []
+    for row in items:
+        item_code = row.get("item_code")
+        if not item_code:
+            frappe.throw("Linha sem código de artigo")
+
+        movement_items.append(
+            _build_stock_movement_item(
+                item_code,
+                row.get("qty") or 0,
+                row.get("rate") or 0,
+                company,
+            )
+        )
+
+    payload = {
+        "supplierId": supplier_id,
+        "date": get_datetime(date).isoformat() if date else get_datetime().isoformat(),
+        "items": movement_items,
+    }
+
+    if document_number:
+        payload["documentNumber"] = document_number
+    if external_document:
+        payload["externalDocument"] = external_document
+
+    try:
+        response = requests.post(
+            f"{get_pos_base_url(company)}/articles/stocks/movements",
+            headers=get_pos_auth_headers(),
+            json=payload,
+            timeout=30,
+        )
+
+        if response.status_code == 400:
+            frappe.throw(_format_pos_login_error(response))
+
+        response.raise_for_status()
+
+        data = response.json() if response.content else None
+        return {
+            "success": True,
+            "data": data,
+        }
+    except frappe.exceptions.ValidationError:
+        raise
+    except requests.exceptions.RequestException as e:
+        frappe.log_error(
+            title="Erro técnico ao consumir API do POS",
+            message=str(e),
+        )
         frappe.throw("Erro de comunicação com o POS")
