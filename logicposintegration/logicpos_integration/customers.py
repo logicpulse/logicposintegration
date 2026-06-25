@@ -234,7 +234,7 @@ def create_customer_in_pos(customer_data, company=None):
 
 
 @frappe.whitelist()
-def sync_supplier_to_pos(purchase_order, supplier, company=None):
+def sync_supplier_to_pos(supplier, company=None):
     requests = _get_requests()
 
     if not supplier:
@@ -246,30 +246,20 @@ def sync_supplier_to_pos(purchase_order, supplier, company=None):
 
     try:
         existing = get_customer_by_fiscal_number(fiscal_number, company)
-        if existing.get("found"):
-            return {
-                "success": True,
-                "created": False,
-                "pos_id": existing["data"].get("id"),
-                "fiscal_number": fiscal_number,
-            }
+        if existing.get("found"): 
+            return {"success": True, "created": False, "pos_id": existing["data"].get("id")}
 
         payload = _get_supplier_pos_payload(supplier, company)
         if payload.get("error"):
             return {"success": False, "message": payload["error"]}
 
-        created = create_customer_in_pos(payload, company)
-
-        frappe.db.set_value("Purchase Order", purchase_order, "supplier_id_at_pos", created.get("id"))
+        created = create_customer_in_pos(payload, company) 
 
         return {
             "success": True,
             "created": True,
-            "pos_id": created.get("id"),
-            "fiscal_number": fiscal_number,
-            "data": created,
+            "pos_id": created.get("id")
         }
-
     except requests.exceptions.RequestException as e:
         frappe.log_error(
             title="Erro de comunicação ao sincronizar fornecedor com o POS",

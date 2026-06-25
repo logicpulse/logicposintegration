@@ -1,5 +1,5 @@
 import frappe
-from frappe.utils import get_datetime
+from frappe.utils import get_datetime, get_fullname
 from logicposintegration.logicpos_integration.utils import (
     _format_pos_login_error,
     _get_requests,
@@ -151,6 +151,36 @@ def get_on_hand_total_for_article(code: str, company: str | None = None) -> dict
         ) 
         frappe.throw("Erro de comunicação com o POS")
 
+POS_STOCK_COMMENT_MARKER = "actualizou o stock no POS"
+
+
+def _pos_stock_already_updated(purchase_order: str) -> bool:
+    return bool(
+        frappe.db.exists(
+            "Comment",
+            {
+                "reference_doctype": "Purchase Order",
+                "reference_name": purchase_order,
+                "comment_type": "Comment",
+                "content": ("like", f"%{POS_STOCK_COMMENT_MARKER}%"),
+            },
+        )
+    )
+
+
+def _finalize_purchase_order_after_pos_stock_sync(purchase_order: str) -> None:
+    po = frappe.get_doc("Purchase Order", purchase_order)
+
+    if po.docstatus != 1:
+        frappe.throw("A encomenda deve estar submetida")
+
+    user_display = get_fullname(frappe.session.user) or frappe.session.user
+    po.add_comment("Comment", f"{user_display} {POS_STOCK_COMMENT_MARKER}")
+
+    if po.status not in ("Cancelled", "Closed"):
+        po.update_status("Closed")
+
+
 def _build_stock_movement_item(item_code: str, qty: float, rate: float, company: str) -> dict:
     article = get_article_by_code(item_code, company)
     if not article.get("found"):
@@ -172,6 +202,7 @@ def update_stock(
     supplier_id: str,
     company: str,
     items,
+    purchase_order=None,
     date=None,
     document_number=None,
     external_document=None,
@@ -180,6 +211,12 @@ def update_stock(
 
     if not supplier_id or not company:
         frappe.throw("Parâmetros inválidos")
+
+    if not purchase_order:
+        frappe.throw("Encomenda de compra não informada")
+
+    if _pos_stock_already_updated(purchase_order):
+        frappe.throw("O stock desta encomenda já foi actualizado no POS")
 
     items = frappe.parse_json(items)
     if not items or not isinstance(items, list):
@@ -225,6 +262,8 @@ def update_stock(
         response.raise_for_status()
 
         data = response.json() if response.content else None
+        _finalize_purchase_order_after_pos_stock_sync(purchase_order)
+
         return {
             "success": True,
             "data": data,

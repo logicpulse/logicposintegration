@@ -1,17 +1,9 @@
-frappe.ui.form.on("Purchase Order", {
-	after_save(frm) {
-		if (!frm.doc.supplier || !frm.doc.company) {
-			return;
-		}
-
-		if (is_valid_supplier_id_at_pos(frm.doc.supplier_id_at_pos)) {
-			return;
-		}
-
+frappe.ui.form.on("Purchase Order", { 
+	supplier(frm) {
 		sync_supplier_to_pos(frm);
 	},
 	refresh(frm) {
-		if (frm.doc.docstatus === 1) {
+		if (frm.doc.docstatus === 1 && frm.doc.status !== "Closed") {
 			frm.add_custom_button(__("Actualizar Stock"), () => {
 				update_stock(frm);
 			});
@@ -19,6 +11,11 @@ frappe.ui.form.on("Purchase Order", {
 	},
 });
 
+/**
+ * Verifica se o ID do fornecedor no POS é válido
+ * @param {string} supplier_id_at_pos - ID do fornecedor no POS
+ * @returns {boolean} - true se o ID é válido, false caso contrário
+ */
 function is_valid_supplier_id_at_pos(supplier_id_at_pos) {
 	return supplier_id_at_pos &&
 		typeof supplier_id_at_pos === "string" &&
@@ -28,8 +25,7 @@ function is_valid_supplier_id_at_pos(supplier_id_at_pos) {
 function sync_supplier_to_pos(frm) {
 	frappe.call({
 		method: "logicposintegration.logicpos_integration.customers.sync_supplier_to_pos",
-		args: {
-			purchase_order: frm.doc.name,
+		args: { 
 			supplier: frm.doc.supplier,
 			company: frm.doc.company,
 		},
@@ -42,6 +38,9 @@ function sync_supplier_to_pos(frm) {
 			}
 
 			if (result.success) {
+				frm.doc.supplier_id_at_pos = result.pos_id;
+				frm.refresh_field('supplier_id_at_pos'); 
+
 				if (result.created) {
 					frappe.show_alert({
 						message: __("Fornecedor sincronizado com o POS"),
@@ -72,6 +71,15 @@ function sync_supplier_to_pos(frm) {
 }
 
 function update_stock(frm) {
+	if (frm.doc.status === "Closed") {
+		frappe.msgprint({
+			title: __("POS"),
+			message: __("O stock desta encomenda já foi actualizado no POS"),
+			indicator: "orange",
+		});
+		return;
+	}
+
 	if (!is_valid_supplier_id_at_pos(frm.doc.supplier_id_at_pos)) {
 		frappe.msgprint({
 			title: __("POS"),
@@ -84,6 +92,7 @@ function update_stock(frm) {
 	frappe.call({
 		method: "logicposintegration.logicpos_integration.articles.update_stock",
 		args: {
+			purchase_order: frm.doc.name,
 			supplier_id: frm.doc.supplier_id_at_pos,
 			company: frm.doc.company,
 			date: frm.doc.transaction_date,
@@ -104,6 +113,7 @@ function update_stock(frm) {
 					message: __("Stock actualizado no POS"),
 					indicator: "green",
 				});
+				frm.reload_doc();
 			}
 		},
 		error(r) {
