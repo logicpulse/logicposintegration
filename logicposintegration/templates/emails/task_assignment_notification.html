@@ -1,0 +1,144 @@
+{# ── Empresa ── #}
+{% set default_company = frappe.db.get_default('company') or frappe.db.get_single_value('Global Defaults',
+'default_company') %}
+{% set company_name = default_company %}
+{% set ref_doc = none %}
+{% set doc_title = document_name %}
+
+{% if document_type and document_name %}
+{% set ref_doc = frappe.get_doc(document_type, document_name) %}
+{% if ref_doc.get('company') %}
+{% set company_name = ref_doc.company %}
+{% endif %}
+{% set title_field = frappe.get_meta(document_type).title_field %}
+{% if title_field and title_field != 'name' %}
+{% set doc_title = ref_doc.get(title_field) or document_name %}
+{% endif %}
+{% endif %}
+
+{% if company_name %}
+{% set company = frappe.db.get_value("Company", company_name, ["name", "country", "website", "phone_no", "email",
+"company_logo"], as_dict=1) %}
+{% endif %}
+{% set logo_data_uri = get_email_image_data_uri(company.company_logo if company else none, 80) %}
+
+{% set todos = frappe.get_all("ToDo", filters={
+"reference_type": document_type,
+"reference_name": document_name,
+"status": "Open"
+}, fields=["priority", "date", "description"], limit=1) if document_type and document_name else [] %}
+{% set todo = todos[0] if todos else none %}
+
+{% set task_title = (ref_doc.subject if ref_doc and ref_doc.get('subject') else doc_title) or document_name %}
+{% set task_description = description or (ref_doc.description if ref_doc else '') or (todo.description if todo else '')
+%}
+{% set task_start = ref_doc.exp_start_date if ref_doc and ref_doc.get('exp_start_date') else none %}
+{% set task_end = ref_doc.exp_end_date if ref_doc and ref_doc.get('exp_end_date') else none %}
+{% set task_duration = none %}
+{% if task_start and task_end %}
+{% set task_duration = frappe.utils.format_datetime(task_start) ~ ' – ' ~ frappe.utils.format_datetime(task_end) %}
+{% elif task_start %}
+{% set task_duration = frappe.utils.format_datetime(task_start) %}
+{% elif task_end %}
+{% set task_duration = frappe.utils.format_datetime(task_end) %}
+{% endif %}
+{% set task_priority = (todo.priority if todo else '') or (ref_doc.priority if ref_doc and ref_doc.get('priority') else
+'') %}
+
+{# ── Cabeçalho (empresa + título) ── #}
+<table class="table" style="margin-top: 0; border-bottom: solid 1px #d1d8dd; width: 100%;">
+	<tbody>
+		<tr>
+			<td style="width: 100%; border: 0; vertical-align: top">
+				<table class="table" style="margin: 0">
+					<tbody>
+						<tr>
+							<td style="border: 0; text-align: center; padding-bottom: 8px">
+								<img src="{{ logo_data_uri }}" alt="company-logo" height="80" width="auto" />
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<table class="table table-striped" style="margin: 0">
+					<tbody>
+						<tr>
+							<th class="text-center" style="padding: 10px; background: #f5f7fa;">
+								{% if company %}
+								{{ company.name[:-2] if company.name|length > 2 else company.name }} {{ company.country
+								}} | Tarefa
+								{% else %}
+								LogicPulse | Tarefa
+								{% endif %}
+							</th>
+						</tr>
+						<tr>
+							<td class="text-center" style="font-size: 16px; font-weight: 600; padding: 10px">{{
+								doc_title or document_name }}</td>
+						</tr>
+					</tbody>
+				</table>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+{# ── Corpo ── #}
+<p class="text-color" style="margin: 24px 0 16px;">{{ body_content }}</p>
+
+{% if document_type and document_name %}
+<p style="margin: 0 0 16px;">A seguinte tarefa foi-lhe atribuída:</p>
+
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
+	<tbody>
+		{% if task_title %}
+		<tr>
+			<td
+				style="padding: 10px 12px; border-bottom: 1px solid #eef0f3; color: #8d99a6; font-size: 11px; font-weight: 600; text-transform: uppercase; width: 35%; vertical-align: top;">
+				Título</td>
+			<td style="padding: 10px 12px; border-bottom: 1px solid #eef0f3; color: #36414c; vertical-align: top;">{{
+				task_title }}</td>
+		</tr>
+		{% endif %}
+		{% if task_description %}
+		<tr>
+			<td
+				style="padding: 10px 12px; border-bottom: 1px solid #eef0f3; color: #8d99a6; font-size: 11px; font-weight: 600; text-transform: uppercase; width: 35%; vertical-align: top;">
+				Descrição</td>
+			<td style="padding: 10px 12px; border-bottom: 1px solid #eef0f3; color: #36414c; vertical-align: top;">{{
+				task_description | safe }}</td>
+		</tr>
+		{% endif %}
+		{% if task_duration %}
+		<tr>
+			<td
+				style="padding: 10px 12px; border-bottom: 1px solid #eef0f3; color: #8d99a6; font-size: 11px; font-weight: 600; text-transform: uppercase; width: 35%; vertical-align: top;">
+				Duração</td>
+			<td style="padding: 10px 12px; border-bottom: 1px solid #eef0f3; color: #36414c; vertical-align: top;">{{
+				task_duration }}</td>
+		</tr>
+		{% endif %}
+		{% if task_priority %}
+		<tr>
+			<td
+				style="padding: 10px 12px; border-bottom: 1px solid #eef0f3; color: #8d99a6; font-size: 11px; font-weight: 600; text-transform: uppercase; width: 35%; vertical-align: top;">
+				Prioridade</td>
+			<td style="padding: 10px 12px; border-bottom: 1px solid #eef0f3; color: #36414c; vertical-align: top;">{{
+				task_priority }}</td>
+		</tr>
+		{% endif %}
+	</tbody>
+</table>
+{% endif %}
+
+<div style="text-align: center; margin: 32px 0;">
+	<a href="{{ doc_link }}"
+		style="display: inline-block; padding: 14px 40px; background: #0AABE6; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; border-radius: 4px;">
+		Abrir Tarefa
+	</a>
+</div>
+
+<hr style="border: 0; border-top: 1px solid #d1d8dd; margin: 24px 0;" />
+
+<p style="margin: 0; color: #8d99a6; font-size: 11px; font-style: italic;">
+	*Este é um email gerado automaticamente. Por favor não responda a este email.*
+</p>

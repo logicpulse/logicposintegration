@@ -80,11 +80,11 @@ doctype_js = {
 # Jinja
 # ----------
 
-# add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "logicposintegration.utils.jinja_methods",
-# 	"filters": "logicposintegration.utils.jinja_filters"
-# }
+jinja = {
+	"methods": [
+		"logicposintegration.utils.email_images",
+	],
+}
 
 # Installation
 # ------------

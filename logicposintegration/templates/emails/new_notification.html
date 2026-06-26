@@ -1,0 +1,15 @@
+{% set body_text = body_content|striptags|lower %}
+{% if document_type == "Task" and ("assigned" in body_text or "atribuiu" in body_text) %}
+{% include "templates/emails/task_assignment_notification.html" %}{% else %}
+<p>
+	<p class="text-color">{{ body_content }}</p>
+</p>
+{% if description %}
+<blockquote>
+	{{ description | markdown }}
+</blockquote>
+{% endif %}
+<div class="more-info">
+	<a href="{{ doc_link }}">{{ _("Open Document") }}</a>
+</div>
+{% endif %}
