@@ -1,0 +1,41 @@
+{% set _company_name = company_name if company_name is defined else (frappe.db.get_default('company') or frappe.db.get_single_value('Global Defaults', 'default_company')) %}
+{% if company is not defined and _company_name %}
+{% set company = frappe.db.get_value("Company", _company_name, ["name", "country", "website", "phone_no", "email", "company_logo"], as_dict=1) %}
+{% endif %}
+{% if logo_data_uri is not defined %}
+{% set logo_data_uri = get_email_image_data_uri(company.company_logo if company else none, 80) %}
+{% endif %}
+
+<table class="table" style="margin-top: 0; border-bottom: solid 1px #d1d8dd; width: 100%;">
+	<tbody>
+		<tr>
+			<td style="width: 100%; border: 0; vertical-align: top">
+				<table class="table" style="margin: 0">
+					<tbody>
+						<tr>
+							<td style="border: 0; text-align: center; padding-bottom: 8px">
+								<img src="{{ logo_data_uri }}" alt="company-logo" height="80" width="auto" />
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<table class="table table-striped" style="margin: 0">
+					<tbody>
+						<tr>
+							<th class="text-center" style="padding: 10px; background: #f5f7fa;">
+								{% if company %}
+								{{ company.name[:-2] if company.name|length > 2 else company.name }} {{ company.country }} | {{ email_header_label }}
+								{% else %}
+								LogicPulse | {{ email_header_label }}
+								{% endif %}
+							</th>
+						</tr>
+						<tr>
+							<td class="text-center" style="font-size: 16px; font-weight: 600; padding: 10px">{{ email_header_subtitle }}</td>
+						</tr>
+					</tbody>
+				</table>
+			</td>
+		</tr>
+	</tbody>
+</table>

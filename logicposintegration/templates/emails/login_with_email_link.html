@@ -1,0 +1,18 @@
+{% set email_header_label = "Login" %}
+{% set email_header_subtitle = app_name %}
+{% include "templates/emails/includes/email_company_header.html" %}
+
+<p style="margin: 24px 0 16px;">Clique no botão abaixo para iniciar sessão em <strong>{{ app_name }}</strong>.</p>
+
+<p style="margin: 0 0 24px; color: #8d99a6; font-size: 13px;">
+	O link expira em {{ minutes }} minuto{% if minutes != 1 %}s{% endif %}.
+</p>
+
+<div style="text-align: center; margin: 32px 0;">
+	<a href="{{ link }}"
+	   style="display: inline-block; padding: 14px 40px; background: #0AABE6; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; border-radius: 4px;">
+		Iniciar Sessão em {{ app_name }}
+	</a>
+</div>
+
+{% include "templates/emails/includes/email_footer_disclaimer.html" %}

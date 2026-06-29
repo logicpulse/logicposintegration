@@ -1,6 +1,7 @@
 {% set body_text = body_content|striptags|lower %}
-{% if document_type == "Task" and ("assigned" in body_text or "atribuiu" in body_text) %}
-{% include "templates/emails/task_assignment_notification.html" %}{% else %}
+{% if document_type == "Task" and ("assigned" in body_text or "atribuiu" in body_text or "compartilhou" in body_text or "shared" in body_text) %}
+{% include "templates/emails/task_assignment_notification.html" %}
+{% else %}
 <p>
 	<p class="text-color">{{ body_content }}</p>
 </p>

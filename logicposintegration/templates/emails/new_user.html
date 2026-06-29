@@ -1,0 +1,35 @@
+{% set email_header_label = "Boas-vindas" %}
+{% set email_header_subtitle = first_name ~ (' ' ~ last_name if last_name else '') %}
+{% include "templates/emails/includes/email_company_header.html" %}
+
+<p style="margin: 24px 0 16px;">Olá {{ first_name }}{% if last_name %} {{ last_name }}{% endif %},</p>
+
+<p style="margin: 0 0 16px;">
+	Foi criada uma nova conta para si em
+	<a href="{{ site_url }}" style="color: #0AABE6; text-decoration: none;"><strong>{{ site_url }}</strong></a>.
+</p>
+
+<p style="margin: 0 0 16px;">O seu ID de login é: <strong>{{ user }}</strong></p>
+
+<p style="margin: 0 0 24px;">Clique no botão abaixo para concluir o registo e definir a sua password:</p>
+
+<div style="text-align: center; margin: 32px 0;">
+	<a href="{{ link }}"
+	   style="display: inline-block; padding: 14px 40px; background: #0AABE6; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; border-radius: 4px;">
+		Concluir Registo
+	</a>
+</div>
+
+{% if created_by != "Administrator" %}
+<p style="margin: 0 0 16px;">
+	Obrigado,<br>
+	{{ created_by }}
+</p>
+{% endif %}
+
+<p style="margin: 0 0 8px; color: #8d99a6; font-size: 12px;">
+	Também pode copiar e colar o seguinte link no seu browser:<br>
+	<a href="{{ link }}" style="color: #0AABE6; word-break: break-all;">{{ link }}</a>
+</p>
+
+{% include "templates/emails/includes/email_footer_disclaimer.html" %}
