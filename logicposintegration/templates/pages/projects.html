@@ -1,0 +1,409 @@
+{% extends "templates/web.html" %}
+
+
+
+{% block title %}
+
+  {{ doc.project_name }}
+
+{% endblock %}
+
+
+
+{% block head_include %}
+
+  <link rel="stylesheet" href="/assets/frappe/css/fonts/fontawesome/font-awesome.min.css">
+
+  <link rel="stylesheet" href="/assets/frappe/node_modules/frappe-gantt/dist/frappe-gantt.css">
+
+  <link rel="stylesheet" href="/assets/logicposintegration/css/portal_projects.css">
+
+{% endblock %}
+
+
+
+{% block header %}
+
+  <h3 class="my-account-header">{{ doc.project_name }}</h3>
+
+{% endblock %}
+
+
+
+{% block page_content %}
+
+  <div class="portal-project-header">
+
+    <div class="portal-project-stats">
+
+      <div>
+
+        <div class="portal-project-stat-label">{{ _("Status") }}</div>
+
+        <div class="portal-project-stat-value">{{ _(doc.status) }}</div>
+
+      </div>
+
+      <div>
+
+        <div class="portal-project-stat-label">{{ _("Progress") }}</div>
+
+        <div class="portal-project-stat-value">{{ doc.get_formatted("percent_complete") }}</div>
+
+      </div>
+
+      <div>
+
+        <div class="portal-project-stat-label">{{ _("Hours Spent") }}</div>
+
+        <div class="portal-project-stat-value">{{ doc.get_formatted("actual_time") }}</div>
+
+      </div>
+
+    </div>
+
+    {{ progress_bar(doc.percent_complete) }}
+
+  </div>
+
+
+
+  <div class="portal-tasks-toolbar">
+
+    <h4>{{ _("Tasks") }}</h4>
+
+    <a class="btn btn-primary btn-sm" href="/tasks/new?project={{ doc.project_name | urlencode }}">
+
+      <i class="fa fa-plus"></i> {{ _("New task") }}
+
+    </a>
+
+  </div>
+
+
+
+  <ul class="nav portal-view-tabs project-tasks-view-tabs">
+
+    <li class="nav-item">
+
+      <a class="nav-link portal-view-tab project-tasks-view-tab active" href="#" data-view="list">
+
+        <i class="fa fa-list-ul"></i> {{ _("List") }}
+
+      </a>
+
+    </li>
+
+    <li class="nav-item">
+
+      <a class="nav-link portal-view-tab project-tasks-view-tab" href="#" data-view="gantt">
+
+        <i class="fa fa-bar-chart"></i> {{ _("Gantt") }}
+
+      </a>
+
+    </li>
+
+    <li class="nav-item">
+
+      <a class="nav-link portal-view-tab project-tasks-view-tab" href="#" data-view="kanban">
+
+        <i class="fa fa-columns"></i> {{ _("Kanban") }}
+
+      </a>
+
+    </li>
+
+  </ul>
+
+
+
+  <div id="tasks-list-view">
+
+    {% if doc.tasks %}
+
+    <div class="website-list portal-task-list">
+
+      <div class="portal-list-header">
+
+        <div class="row align-items-center">
+
+          <div class="col-sm-3 col-12"><b>{{ _("Tasks") }}</b></div>
+
+          <div class="col-sm-2 col-6"><b>{{ _("Status") }}</b></div>
+
+          <div class="col-sm-2 col-6"><b>{{ _("Priority") }}</b></div>
+
+          <div class="col-sm-2 col-6"><b>{{ _("End Date") }}</b></div>
+
+          <div class="col-sm-2 col-6"><b>{{ _("Assignment") }}</b></div>
+
+          <div class="col-sm-1 col-12 text-sm-right"><b>{{ _("Modified") }}</b></div>
+
+        </div>
+
+      </div>
+
+      <div class="result">
+
+        {% include "logicposintegration/templates/includes/projects/project_tasks.html" %}
+
+      </div>
+
+    </div>
+
+    {% else %}
+
+      {{ empty_state(_("Task")) }}
+
+    {% endif %}
+
+  </div>
+
+
+
+  <div id="tasks-gantt-view" style="display: none;">
+
+    <div class="portal-gantt-toolbar">
+
+      <button type="button" class="portal-gantt-mode-btn" data-mode="Day">{{ _("Day") }}</button>
+
+      <button type="button" class="portal-gantt-mode-btn active" data-mode="Week">{{ _("Week") }}</button>
+
+      <button type="button" class="portal-gantt-mode-btn" data-mode="Month">{{ _("Month") }}</button>
+
+    </div>
+
+    <div id="project-gantt"></div>
+
+  </div>
+
+
+
+  <div id="tasks-kanban-view" style="display: none;">
+
+    {% if kanban_columns %}
+
+    {% set status_colors = {
+      "Open": "orange",
+      "Working": "blue",
+      "Pending Review": "yellow",
+      "Overdue": "red",
+      "Completed": "green",
+      "Cancelled": "grey",
+      "Template": "purple"
+    } %}
+    {% set priority_colors = {
+      "Low": "grey",
+      "Medium": "blue",
+      "High": "orange",
+      "Urgent": "red"
+    } %}
+
+    <div class="project-kanban-board">
+
+      {% for column in kanban_columns %}
+
+      <div class="project-kanban-column">
+
+        <div class="project-kanban-column-title">
+
+          <span>{{ column.label }}</span>
+
+          {% set col_status = status_colors.get(column.status, 'grey') %}
+
+          <span class="portal-status-pill portal-status-{{ col_status }}">{{ column.tasks | length }}</span>
+
+        </div>
+
+        {% if column.tasks %}
+
+          {% for task in column.tasks %}
+
+          <div class="project-kanban-card" data-task="{{ task.name | e }}">
+
+            <div class="project-kanban-card-title">{{ task.subject }}</div>
+
+            <div class="project-kanban-card-meta">
+
+              {% if task.priority %}
+
+                {% set pk = priority_colors.get(task.priority, 'grey') %}
+
+                <span class="portal-priority-pill portal-priority-{{ pk }}">{{ _(task.priority) }}</span>
+
+              {% endif %}
+
+              {% if task.exp_end_date %}
+
+                <span class="text-muted">{{ task.exp_end_date }}</span>
+
+              {% endif %}
+
+              {% if task.progress %}<span class="text-muted">{{ task.progress }}%</span>{% endif %}
+
+            </div>
+
+          </div>
+
+          {% endfor %}
+
+        {% else %}
+
+          <p class="text-muted small mb-0">{{ _("No tasks") }}</p>
+
+        {% endif %}
+
+      </div>
+
+      {% endfor %}
+
+    </div>
+
+    {% else %}
+
+      {{ empty_state(_("Task")) }}
+
+    {% endif %}
+
+  </div>
+
+
+
+  {% if doc.timesheets %}
+
+    <h4 class="my-account-header mt-4">{{ _("Timesheets") }}</h4>
+
+    <div class="website-list">
+
+      <div class="result">
+
+        <div class="web-list-item transaction-list-item">
+
+          <div class="row align-items-center">
+
+            <div class="col-xs-2"><b>{{ _("Timesheet") }}</b></div>
+
+            <div class="col-xs-2"><b>{{ _("Status") }}</b></div>
+
+            <div class="col-xs-2"><b>{{ _("From") }}</b></div>
+
+            <div class="col-xs-2"><b>{{ _("To") }}</b></div>
+
+            <div class="col-xs-2"><b>{{ _("Modified By") }}</b></div>
+
+            <div class="col-xs-2"><b>{{ _("Modified On") }}</b></div>
+
+          </div>
+
+        </div>
+
+        {% include "erpnext/templates/includes/projects/project_timesheets.html" %}
+
+      </div>
+
+    </div>
+
+  {% endif %}
+
+
+
+  {% if doc.attachments %}
+
+    <div class="padding"></div>
+
+    <h4>{{ _("Attachments") }}</h4>
+
+    <div class="project-attachments">
+
+      {% for attachment in doc.attachments %}
+
+        <div class="attachment">
+
+          <a class="no-decoration attachment-link" href="{{ attachment.file_url|e }}" target="blank">
+
+            <div class="row">
+
+              <div class="col-xs-9">
+
+                <span class="indicator red file-name">{{ attachment.file_name|e }}</span>
+
+              </div>
+
+              <div class="col-xs-3">
+
+                <span class="pull-right file-size">{{ attachment.file_size }}</span>
+
+              </div>
+
+            </div>
+
+          </a>
+
+        </div>
+
+      {% endfor %}
+
+    </div>
+
+  {% endif %}
+
+
+
+  <script type="application/json" id="project-gantt-data">{{ gantt_tasks | safe }}</script>
+
+{% endblock %}
+
+
+
+{% macro progress_bar(percent_complete) %}
+
+{% if percent_complete %}
+
+  <div class="mt-3">
+
+    <span class="small py-2 text-muted">{{ _("Project Progress") }}</span>
+
+    <div class="progress progress-hg" style="height: 8px; border-radius: 999px;">
+
+      <div
+
+        class="progress-bar progress-bar-{{ 'warning' if percent_complete|round < 100 else 'success' }} active"
+
+        role="progressbar"
+
+        style="width:{{ percent_complete|round|int }}%; border-radius: 999px;">
+
+      </div>
+
+    </div>
+
+  </div>
+
+{% endif %}
+
+{% endmacro %}
+
+
+
+{% macro empty_state(section_name) %}
+
+<div class="frappe-list align-items-center py-4">
+
+  <div class="text-muted flex justify-center align-center text-center">
+
+    <div class="msg-box no-border">
+
+      <img src="/assets/frappe/images/ui-states/list-empty-state.svg" alt="" class="null-state">
+
+      <p>{{ _("You haven't created a {0} yet").format(section_name) }}</p>
+
+    </div>
+
+  </div>
+
+</div>
+
+{% endmacro %}
+
+

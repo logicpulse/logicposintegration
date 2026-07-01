@@ -1,0 +1,66 @@
+/* Portal sidebar — loaded on all website pages */
+.web-sidebar.portal-sidebar {
+  padding-top: 0.5rem;
+}
+
+.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a,
+.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a:visited {
+  display: flex !important;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.85rem !important;
+  border-radius: 8px;
+  color: #475569 !important;
+  font-weight: 500;
+  transition: background 0.12s ease, color 0.12s ease;
+  text-decoration: none !important;
+  border: none;
+  background: transparent;
+}
+
+.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a i {
+  width: 18px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a span {
+  line-height: 1.3;
+}
+
+.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a:hover,
+.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a:focus {
+  background: #f1f5f9 !important;
+  color: #0284c7 !important;
+  text-decoration: none !important;
+  outline: none;
+}
+
+.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a:hover i,
+.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a:focus i {
+  color: #0284c7;
+}
+
+.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a.active,
+.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a.active:visited,
+.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a.active:hover,
+.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a.active:focus {
+  background: #e0f2fe !important;
+  color: #0284c7 !important;
+  font-weight: 600;
+}
+
+.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a.active i {
+  color: #0284c7;
+}
+
+.web-sidebar.portal-sidebar .sidebar-group h6 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin: 1rem 0 0.35rem;
+  padding: 0 0.85rem;
+}

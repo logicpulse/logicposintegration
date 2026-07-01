@@ -29,7 +29,11 @@ app_license = "mit"
 app_include_js = "/assets/logicposintegration/js/pos_stock_grid.js"
 
 # include js, css files in header of web template
-# web_include_css = "/assets/logicposintegration/css/logicposintegration.css"
+web_include_css = [
+	"/assets/frappe/css/fonts/fontawesome/font-awesome.min.css",
+	"/assets/logicposintegration/css/portal_sidebar.css",
+	"/assets/logicposintegration/css/portal_projects.css",
+]
 # web_include_js = "/assets/logicposintegration/js/logicposintegration.js"
 
 # include custom scss in every website theme (without file extension ".scss")
@@ -68,6 +72,12 @@ doctype_js = {
 # 	"Role": "home_page"
 # }
 
+website_context = {
+	"footer_powered": (
+		'Desenvolvido por <a href="https://logicpulse.com" target="_blank" class="text-muted">Logicpulse</a>'
+	),
+}
+
 # Generators
 # ----------
 
@@ -83,8 +93,14 @@ doctype_js = {
 jinja = {
 	"methods": [
 		"logicposintegration.utils.email_images",
+		"logicposintegration.utils.portal_jinja.get_portal_status_colors",
+		"logicposintegration.utils.portal_jinja.get_portal_priority_colors",
 	],
 }
+
+update_website_context = [
+	"logicposintegration.utils.portal_jinja.update_portal_project_context",
+]
 
 # Installation
 # ------------

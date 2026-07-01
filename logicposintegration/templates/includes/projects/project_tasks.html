@@ -1,0 +1,81 @@
+{% set status_colors = {
+  "Open": "orange",
+  "Working": "blue",
+  "Pending Review": "yellow",
+  "Overdue": "red",
+  "Completed": "green",
+  "Cancelled": "grey",
+  "Template": "purple"
+} %}
+{% set priority_colors = {
+  "Low": "grey",
+  "Medium": "blue",
+  "High": "orange",
+  "Urgent": "red"
+} %}
+
+{% macro task_row(task, indent, status_colors, priority_colors) %}
+<div class="row portal-task-row align-items-center {% if task.children %} portal-task-group {% endif %}">
+  <div class="col-sm-3 col-12 portal-task-subject">
+    <a class="portal-task-link" style="{% if task.parent_task %}padding-left: {{ indent }}px{% endif %}"
+      href="/tasks/{{ task.name | urlencode }}">
+      {% if task.parent_task %}
+        <i class="fa fa-level-up fa-rotate-90 text-muted"></i>
+      {% endif %}
+      {{ task.subject }}
+    </a>
+  </div>
+  <div class="col-sm-2 col-6">
+    {% set status_key = status_colors.get(task.status, 'grey') %}
+    <span class="portal-status-pill portal-status-{{ status_key }}">{{ _(task.status) }}</span>
+  </div>
+  <div class="col-sm-2 col-6">
+    {% if task.priority %}
+      {% set priority_key = priority_colors.get(task.priority, 'grey') %}
+      <span class="portal-priority-pill portal-priority-{{ priority_key }}">{{ _(task.priority) }}</span>
+    {% else %}
+      <span class="text-muted">—</span>
+    {% endif %}
+  </div>
+  <div class="col-sm-2 col-6 small text-muted">
+    {% if task.exp_end_date %}
+      {{ task.exp_end_date }}
+    {% else %}
+      —
+    {% endif %}
+  </div>
+  <div class="col-sm-2 col-6">
+    {% if task["_assign"] %}
+      {% set assigned_users = json.loads(task["_assign"]) %}
+      <div class="portal-task-assignees">
+      {% for user in assigned_users %}
+        {% set user_details = frappe.db.get_value("User", user, ["full_name", "user_image"], as_dict=True) %}
+        {% if user_details.user_image %}
+          <span class="avatar avatar-small portal-avatar" title="{{ user_details.full_name }}">
+            <img src="{{ user_details.user_image }}" alt="">
+          </span>
+        {% else %}
+          <span class="avatar avatar-small portal-avatar" title="{{ user_details.full_name }}">
+            <div class="standard-image">{{ frappe.utils.get_abbr(user_details.full_name) }}</div>
+          </span>
+        {% endif %}
+      {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+  <div class="col-sm-1 col-12 text-sm-right small text-muted portal-task-modified">
+    {{ frappe.utils.pretty_date(task.modified) }}
+  </div>
+</div>
+{% if task.children %}
+  {% for child in task.children %}
+    {{ task_row(child, indent + 24, status_colors, priority_colors) }}
+  {% endfor %}
+{% endif %}
+{% endmacro %}
+
+{% for task in doc.tasks %}
+  <div class="web-list-item portal-task-item">
+    {{ task_row(task, 0, status_colors, priority_colors) }}
+  </div>
+{% endfor %}

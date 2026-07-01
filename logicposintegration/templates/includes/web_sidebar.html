@@ -1,0 +1,287 @@
+{% macro sidebar_icon(route) -%}
+
+  {%- set icons = {
+
+    '/project': 'fa-folder-open',
+
+    '/projects': 'fa-folder-open',
+
+    '/task': 'fa-check-square-o',
+
+    '/tasks': 'fa-check-square-o',
+
+    '/rfq': 'fa-file-text-o',
+
+    '/supplier-quotations': 'fa-file-text-o',
+
+    '/purchase-orders': 'fa-shopping-cart',
+
+    '/purchase-invoices': 'fa-credit-card',
+
+    '/orders': 'fa-shopping-bag',
+
+    '/invoices': 'fa-file-text',
+
+    '/quotations': 'fa-file-o',
+
+    '/addresses': 'fa-map-marker',
+
+    '/material-requests': 'fa-truck',
+
+    '/timesheets': 'fa-clock-o',
+
+    '/issues': 'fa-life-ring',
+
+    '/newsletters': 'fa-envelope-o',
+
+    '/appointment': 'fa-calendar',
+
+    '/me': 'fa-user-circle-o',
+
+  } -%}
+
+  {%- set normalized = route if route.startswith('/') else '/' + route -%}
+
+  {%- set icon = icons.get(normalized, 'fa-angle-right') -%}
+
+  <i class="fa {{ icon }}" aria-hidden="true"></i>
+
+{%- endmacro %}
+
+
+
+{% macro render_sidebar_item(item) %}
+
+<li class="{{ 'sidebar-group' if item.group_title else 'sidebar-item' }}">
+
+	{%- if item.group_title -%}
+
+
+
+	<h6>{{ _(item.group_title) }}</h6>
+
+	{{ render_sidebar_items(item.group_items) }}
+
+
+
+	{%- else -%}
+
+
+
+	{% if item.type != 'input' %}
+
+	{%- set item_route = item.route[1:] if item.route[0] == '/' else item.route -%}
+	{%- set is_active = pathname == item_route
+		or (item_route == 'project' and pathname == 'projects')
+		or (item_route == 'task' and pathname == 'tasks')
+		or (pathname.startswith(item_route + '/')) -%}
+	<a href="{{ item.route }}" class="{{ 'active' if is_active else '' }}"
+
+		{% if item.target %}target="{{ item.target }}" {% endif %}>
+
+		{{ sidebar_icon(item.route) }}
+
+		<span>{{ _(item.title) or _(item.label) }}</span>
+
+	</a>
+
+	{% else %}
+
+	<form action='{{ item.route }}' class="mr-4">
+
+		<input name='q' class='form-control' type='text' style="outline: none"
+
+			placeholder="{{ _(item.title) or _(item.label) }}">
+
+	</form>
+
+	{% endif %}
+
+
+
+	{%- endif -%}
+
+</li>
+
+{% endmacro %}
+
+
+
+{% macro render_sidebar_items(items) %}
+
+{%- if items | len > 0 -%}
+
+<ul class="list-unstyled">
+
+	{% for item in items -%}
+
+	{{ render_sidebar_item(item) }}
+
+	{%- endfor %}
+
+</ul>
+
+{%- endif -%}
+
+{% endmacro %}
+
+
+
+{% macro my_account() %}
+
+{% if frappe.user != 'Guest' %}
+
+<ul class="list-unstyled">
+
+	<li class="sidebar-item">
+
+		<a href="/me" class="{{ 'active' if pathname == 'me' else '' }}">
+
+			<i class="fa fa-user-circle-o" aria-hidden="true"></i>
+
+			<span>{{ _("My Account") }}</span>
+
+		</a>
+
+	</li>
+
+</ul>
+
+{% endif %}
+
+{% endmacro %}
+
+
+
+<div class="web-sidebar portal-sidebar">
+
+	{% if sidebar_title %}
+
+	<li class="title">
+
+		{{ _(sidebar_title) }}
+
+	</li>
+
+	{% endif %}
+
+	<div class="sidebar-items">
+
+		{{ render_sidebar_items(sidebar_items) }}
+
+		{{ my_account() }}
+
+	</div>
+
+</div>
+
+
+
+<script>
+
+	frappe.ready(function () {
+
+		var route_aliases = {
+
+			"/project": ["/project", "/projects"],
+
+			"/task": ["/task", "/tasks"],
+
+		};
+
+
+
+		function normalizePath(path) {
+
+			if (!path) {
+
+				return "/";
+
+			}
+
+			path = path.replace(/\/+$/, "") || "/";
+
+			return path;
+
+		}
+
+
+
+		function isSidebarLinkActive(linkHref, pageHref) {
+
+			var linkPath = normalizePath(new URL(linkHref, window.location.origin).pathname);
+
+			var pagePath = normalizePath(new URL(pageHref, window.location.origin).pathname);
+
+
+
+			if (linkPath === pagePath) {
+
+				return true;
+
+			}
+
+
+
+			var aliases = route_aliases[linkPath] || [];
+
+			if (aliases.indexOf(pagePath) !== -1) {
+
+				return true;
+
+			}
+
+
+
+			if (linkPath !== "/" && pagePath.indexOf(linkPath + "/") === 0) {
+
+				return true;
+
+			}
+
+
+
+			return false;
+
+		}
+
+
+
+		var page_href = window.location.href;
+
+		if (page_href.indexOf("#") !== -1) {
+
+			page_href = page_href.slice(0, page_href.indexOf("#"));
+
+		}
+
+
+
+		$(".portal-sidebar .sidebar-item a").each(function () {
+
+			if (isSidebarLinkActive(this.href, page_href)) {
+
+				$(this).addClass("active");
+
+			} else {
+
+				$(this).removeClass("active");
+
+			}
+
+		});
+
+
+
+		var active_sidebar_item = $(".portal-sidebar .sidebar-item a.active");
+
+		if (active_sidebar_item.length > 0) {
+
+			active_sidebar_item.get(0).scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
+
+		}
+
+	});
+
+</script>
+
