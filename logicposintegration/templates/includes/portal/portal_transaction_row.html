@@ -1,0 +1,26 @@
+{%- set status_color = doc.indicator_color or ("blue" if doc.docstatus == 1 else "grey") -%}
+{%- set row_href = "/" + pathname + "/" + (doc.name | urlencode) -%}
+<a href="{{ row_href }}" class="portal-list-row">
+	<div class="portal-list-row-main">
+		<span class="portal-list-row-id">{{ doc.name }}</span>
+		<span class="portal-list-row-date-inline">{{ frappe.utils.global_date_format(doc.modified) }}</span>
+		{% if doc.items_preview %}
+		<span class="portal-list-row-subtitle">{{ doc.items_preview }}</span>
+		{% endif %}
+	</div>
+
+	<div class="portal-list-row-status">
+		<span class="portal-list-badge portal-list-badge-{{ status_color }}">{{ _(doc.status) }}</span>
+	</div>
+
+	<div class="portal-list-row-aside">
+		{% if doc.is_rounded_total_disabled() and doc.get("grand_total") %}
+		<span class="portal-list-row-amount">{{ doc.get_formatted("grand_total") }}</span>
+		{% elif doc.get("rounded_total") %}
+		<span class="portal-list-row-amount">{{ doc.get_formatted("rounded_total") }}</span>
+		{% elif doc.get("grand_total") %}
+		<span class="portal-list-row-amount">{{ doc.get_formatted("grand_total") }}</span>
+		{% endif %}
+		<i class="fa-solid fa-angle-right portal-list-row-chevron" aria-hidden="true"></i>
+	</div>
+</a>

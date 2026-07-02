@@ -1,287 +1,196 @@
 {% macro sidebar_icon(route) -%}
-
   {%- set icons = {
-
-    '/project': 'fa-folder-open',
-
-    '/projects': 'fa-folder-open',
-
-    '/task': 'fa-check-square-o',
-
-    '/tasks': 'fa-check-square-o',
-
-    '/rfq': 'fa-file-text-o',
-
-    '/supplier-quotations': 'fa-file-text-o',
-
-    '/purchase-orders': 'fa-shopping-cart',
-
-    '/purchase-invoices': 'fa-credit-card',
-
-    '/orders': 'fa-shopping-bag',
-
-    '/invoices': 'fa-file-text',
-
-    '/quotations': 'fa-file-o',
-
-    '/addresses': 'fa-map-marker',
-
-    '/material-requests': 'fa-truck',
-
-    '/timesheets': 'fa-clock-o',
-
-    '/issues': 'fa-life-ring',
-
-    '/newsletters': 'fa-envelope-o',
-
-    '/appointment': 'fa-calendar',
-
-    '/me': 'fa-user-circle-o',
-
+    '/portal': 'fa-solid fa-house',
+    '/project': 'fa-regular fa-folder-closed',
+    '/projects': 'fa-regular fa-folder-closed',
+    '/task': 'fa-regular fa-square-check',
+    '/tasks': 'fa-regular fa-square-check',
+    '/rfq': 'fa-regular fa-file-lines',
+    '/supplier-quotations': 'fa-regular fa-file-lines',
+    '/purchase-orders': 'fa-solid fa-cart-shopping',
+    '/purchase-invoices': 'fa-solid fa-credit-card',
+    '/orders': 'fa-solid fa-bag-shopping',
+    '/invoices': 'fa-regular fa-file-lines',
+    '/quotations': 'fa-regular fa-file-lines',
+    '/addresses': 'fa-regular fa-map',
+    '/material-requests': 'fa-solid fa-cart-flatbed-suitcase',
+    '/timesheets': 'fa-regular fa-hourglass',
+    '/issues': 'fa-regular fa-note-sticky',
+    '/newsletters': 'fa-regular fa-envelope',
+    '/appointment': 'fa-regular fa-calendar',
+    '/me': 'fa-regular fa-user',
+    '/shipments': 'fa-solid fa-truck-fast',
   } -%}
-
   {%- set normalized = route if route.startswith('/') else '/' + route -%}
-
-  {%- set icon = icons.get(normalized, 'fa-angle-right') -%}
-
-  <i class="fa {{ icon }}" aria-hidden="true"></i>
-
+  {%- set icon = icons.get(normalized, 'fa-solid fa-angle-right') -%}
+  <i class="{{ icon }} portal-sidebar-icon" aria-hidden="true"></i>
 {%- endmacro %}
 
-
-
 {% macro render_sidebar_item(item) %}
-
 <li class="{{ 'sidebar-group' if item.group_title else 'sidebar-item' }}">
-
 	{%- if item.group_title -%}
-
-
-
 	<h6>{{ _(item.group_title) }}</h6>
-
 	{{ render_sidebar_items(item.group_items) }}
-
-
-
 	{%- else -%}
-
-
-
 	{% if item.type != 'input' %}
-
 	{%- set item_route = item.route[1:] if item.route[0] == '/' else item.route -%}
 	{%- set is_active = pathname == item_route
 		or (item_route == 'project' and pathname == 'projects')
 		or (item_route == 'task' and pathname == 'tasks')
 		or (pathname.startswith(item_route + '/')) -%}
-	<a href="{{ item.route }}" class="{{ 'active' if is_active else '' }}"
-
+	<a href="{{ item.route }}" class="portal-sidebar-link {{ 'active' if is_active else '' }}"
 		{% if item.target %}target="{{ item.target }}" {% endif %}>
-
 		{{ sidebar_icon(item.route) }}
-
-		<span>{{ _(item.title) or _(item.label) }}</span>
-
+		<span class="portal-sidebar-label">{{ _(item.title) or _(item.label) }}</span>
 	</a>
-
 	{% else %}
-
-	<form action='{{ item.route }}' class="mr-4">
-
-		<input name='q' class='form-control' type='text' style="outline: none"
-
+	<form action='{{ item.route }}' class="portal-sidebar-search">
+		<input name='q' class='form-control' type='text'
 			placeholder="{{ _(item.title) or _(item.label) }}">
-
 	</form>
-
 	{% endif %}
-
-
-
 	{%- endif -%}
-
 </li>
-
 {% endmacro %}
-
-
 
 {% macro render_sidebar_items(items) %}
-
 {%- if items | len > 0 -%}
-
-<ul class="list-unstyled">
-
+<ul class="list-unstyled portal-sidebar-nav">
 	{% for item in items -%}
-
 	{{ render_sidebar_item(item) }}
-
 	{%- endfor %}
-
 </ul>
-
 {%- endif -%}
-
 {% endmacro %}
 
-
+{% macro portal_home_link() %}
+<li class="sidebar-item sidebar-item-home">
+	<a href="/portal" class="portal-sidebar-link {{ 'active' if pathname == 'portal' else '' }}">
+		{{ sidebar_icon('/portal') }}
+		<span class="portal-sidebar-label">{{ _("Home") }}</span>
+	</a>
+</li>
+{% endmacro %}
 
 {% macro my_account() %}
-
 {% if frappe.user != 'Guest' %}
-
-<ul class="list-unstyled">
-
+<ul class="list-unstyled portal-sidebar-nav portal-sidebar-nav-account">
 	<li class="sidebar-item">
-
-		<a href="/me" class="{{ 'active' if pathname == 'me' else '' }}">
-
-			<i class="fa fa-user-circle-o" aria-hidden="true"></i>
-
-			<span>{{ _("My Account") }}</span>
-
+		<a href="/me" class="portal-sidebar-link {{ 'active' if pathname == 'me' else '' }}">
+			{{ sidebar_icon('/me') }}
+			<span class="portal-sidebar-label">{{ _("My Account") }}</span>
 		</a>
-
 	</li>
-
 </ul>
-
 {% endif %}
-
 {% endmacro %}
-
-
 
 <div class="web-sidebar portal-sidebar">
 
+<style>
+  .web-sidebar.portal-sidebar a.portal-sidebar-link,
+  .web-sidebar.portal-sidebar a.portal-sidebar-link:visited,
+  .web-sidebar.portal-sidebar a.portal-sidebar-link:hover,
+  .web-sidebar.portal-sidebar a.portal-sidebar-link:focus,
+  .web-sidebar.portal-sidebar a.portal-sidebar-link.active,
+  .web-sidebar.portal-sidebar a.portal-sidebar-link.active:visited,
+  .web-sidebar.portal-sidebar a.portal-sidebar-link.active:hover,
+  .web-sidebar.portal-sidebar a.portal-sidebar-link.active:focus {
+    position: relative !important;
+    width: 100% !important;
+    background: none !important;
+    background-color: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    color: #1a1a1a !important;
+  }
+
+  .web-sidebar.portal-sidebar a.portal-sidebar-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background-color: transparent;
+    transition: background-color 0.12s ease;
+  }
+
+  .web-sidebar.portal-sidebar a.portal-sidebar-link:hover::after,
+  .web-sidebar.portal-sidebar a.portal-sidebar-link:focus::after,
+  .web-sidebar.portal-sidebar a.portal-sidebar-link.active::after {
+    background-color: #0284c7;
+  }
+</style>
+
 	{% if sidebar_title %}
-
-	<li class="title">
-
-		{{ _(sidebar_title) }}
-
-	</li>
-
+	<p class="portal-sidebar-title">{{ _(sidebar_title) }}</p>
 	{% endif %}
-
 	<div class="sidebar-items">
-
+		<ul class="list-unstyled portal-sidebar-nav">
+			{{ portal_home_link() }}
+		</ul>
 		{{ render_sidebar_items(sidebar_items) }}
-
 		{{ my_account() }}
-
 	</div>
-
 </div>
 
-
-
 <script>
-
 	frappe.ready(function () {
-
 		var route_aliases = {
-
 			"/project": ["/project", "/projects"],
-
 			"/task": ["/task", "/tasks"],
-
 		};
 
-
-
 		function normalizePath(path) {
-
 			if (!path) {
-
 				return "/";
-
 			}
-
 			path = path.replace(/\/+$/, "") || "/";
-
 			return path;
-
 		}
-
-
 
 		function isSidebarLinkActive(linkHref, pageHref) {
-
 			var linkPath = normalizePath(new URL(linkHref, window.location.origin).pathname);
-
 			var pagePath = normalizePath(new URL(pageHref, window.location.origin).pathname);
 
-
+			if (linkPath === "/portal") {
+				return pagePath === "/portal";
+			}
 
 			if (linkPath === pagePath) {
-
 				return true;
-
 			}
-
-
 
 			var aliases = route_aliases[linkPath] || [];
-
 			if (aliases.indexOf(pagePath) !== -1) {
-
 				return true;
-
 			}
-
-
 
 			if (linkPath !== "/" && pagePath.indexOf(linkPath + "/") === 0) {
-
 				return true;
-
 			}
-
-
 
 			return false;
-
 		}
-
-
 
 		var page_href = window.location.href;
-
 		if (page_href.indexOf("#") !== -1) {
-
 			page_href = page_href.slice(0, page_href.indexOf("#"));
-
 		}
 
-
-
-		$(".portal-sidebar .sidebar-item a").each(function () {
-
+		$(".portal-sidebar a.portal-sidebar-link").each(function () {
 			if (isSidebarLinkActive(this.href, page_href)) {
-
 				$(this).addClass("active");
-
 			} else {
-
 				$(this).removeClass("active");
-
 			}
-
 		});
 
-
-
-		var active_sidebar_item = $(".portal-sidebar .sidebar-item a.active");
-
+		var active_sidebar_item = $(".portal-sidebar a.portal-sidebar-link.active");
 		if (active_sidebar_item.length > 0) {
-
 			active_sidebar_item.get(0).scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
-
 		}
-
 	});
-
 </script>
-

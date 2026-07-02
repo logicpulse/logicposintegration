@@ -1,0 +1,29 @@
+{% if sub_title %}
+<p class="portal-list-subtitle">{{ sub_title }}</p>
+{% endif %}
+
+{% if not result -%}
+<div class="portal-list-empty">
+	<p class="portal-list-empty-title">{{ no_result_message or _("Nothing to show") }}</p>
+</div>
+{% else %}
+<div class="portal-list website-list{% if doctype == 'Project' %} portal-list-project{% elif portal_list_layout %} portal-list-{{ portal_list_layout }}{% endif %}" data-doctype="{{ doctype }}" data-txt="{{ (txt or '')|e }}">
+	{% if portal_list_columns %}
+	<div class="portal-list-columns" aria-hidden="true">
+		{% for column in portal_list_columns %}
+		<span>{{ column }}</span>
+		{% endfor %}
+	</div>
+	{% endif %}
+
+	<div class="portal-list-results result">
+		{% for item in result %}
+			{{ item }}
+		{% endfor %}
+	</div>
+
+	<div class="portal-list-more more-block {% if not show_more -%} d-none {%- endif %}">
+		<button class="btn btn-light btn-more btn-sm">{{ _("More") }}</button>
+	</div>
+</div>
+{%- endif %}

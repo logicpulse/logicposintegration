@@ -1,0 +1,18 @@
+{%- set status_color = portal_issue_status_colors.get(doc.status, "grey") if portal_issue_status_colors else "grey" -%}
+<a href="/issues?name={{ doc.name | urlencode }}" class="portal-list-row">
+	<div class="portal-list-row-main">
+		<span class="portal-list-row-id">{{ doc.name }}</span>
+		<span class="portal-list-row-subtitle">{{ doc.subject }}</span>
+	</div>
+
+	<div class="portal-list-row-status">
+		<span class="portal-list-badge portal-list-badge-{{ status_color }}">
+			{% if doc.status == "Open" %}{{ doc.priority }}{% else %}{{ _(doc.status) }}{% endif %}
+		</span>
+	</div>
+
+	<div class="portal-list-row-aside">
+		<span class="portal-list-row-date">{{ frappe.format_date(doc.modified) }}</span>
+		<i class="fa-solid fa-angle-right portal-list-row-chevron" aria-hidden="true"></i>
+	</div>
+</a>

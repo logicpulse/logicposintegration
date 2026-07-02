@@ -1,0 +1,115 @@
+{% if sub_title %}
+<p class="portal-list-subtitle">{{ sub_title }}</p>
+{% endif %}
+
+{% if not result -%}
+<div class="portal-list-empty">
+	<p class="portal-list-empty-title">{{ no_result_message or _("Nothing to show") }}</p>
+</div>
+{% else %}
+<style>
+  .portal-project-list-head,
+  .portal-project-list-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 7.5rem 8.5rem 6.5rem !important;
+    column-gap: 1rem;
+    align-items: center;
+    padding-left: 1.1rem;
+    padding-right: 1.1rem;
+  }
+
+  .portal-project-list-head {
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 0.35rem;
+  }
+
+  .portal-project-list-head span {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    white-space: nowrap;
+  }
+
+  .portal-project-list-row {
+    position: relative;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .portal-project-list-row:hover {
+    background: #f8fafc;
+  }
+
+  .portal-project-list-row-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    opacity: 0;
+    text-indent: -9999px;
+    overflow: hidden;
+  }
+
+  .portal-project-col-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .portal-project-col-status,
+  .portal-project-col-progress,
+  .portal-project-col-updated {
+    position: relative;
+    z-index: 0;
+  }
+
+  .portal-project-col-progress .portal-list-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .portal-project-col-progress .portal-list-progress-bar span {
+    display: block;
+    height: 100%;
+    background: #0284c7;
+    border-radius: 999px;
+  }
+
+  .portal-project-col-progress .portal-list-progress-bar span.is-complete {
+    background: #16a34a;
+  }
+
+  .portal-project-col-updated {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+</style>
+
+<div class="portal-project-list website-list" data-doctype="{{ doctype }}" data-txt="{{ (txt or '')|e }}">
+	<div class="portal-project-list-head" aria-hidden="true">
+		<span class="portal-project-col-main">{{ _("Project") }}</span>
+		<span class="portal-project-col-status">{{ _("Status") }}</span>
+		<span class="portal-project-col-progress">{{ _("% de conclusão") }}</span>
+		<span class="portal-project-col-updated">{{ _("Updated") }}</span>
+	</div>
+
+	<div class="portal-project-list-body result">
+		{% for item in result %}
+			{{ item }}
+		{% endfor %}
+	</div>
+
+	<div class="portal-list-more more-block {% if not show_more -%} d-none {%- endif %}">
+		<button class="btn btn-light btn-more btn-sm">{{ _("More") }}</button>
+	</div>
+</div>
+{%- endif %}

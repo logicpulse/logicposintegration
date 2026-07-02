@@ -1,0 +1,98 @@
+{% extends "templates/web.html" %}
+{% block footer %}{% endblock %}
+
+{% block head_include %}
+  {% if not doctype %}
+  <link rel="stylesheet" href="/assets/logicposintegration/css/portal_home.css">
+  {% else %}
+  <link rel="stylesheet" href="/assets/logicposintegration/css/portal_list.css">
+  {% endif %}
+{% endblock %}
+
+{% block header %}
+  {% if doctype %}
+  <header class="portal-list-page-header">
+    <h1 class="portal-list-page-title">{{ title or _(doctype) }}</h1>
+  </header>
+  {% endif %}
+{% endblock %}
+
+{% block page_content %}
+{% if not doctype %}
+<section class="portal-home">
+  <div class="portal-home-hero">
+    {% if portal_company_name %}
+    <p class="portal-home-eyebrow">{{ portal_company_name }}</p>
+    {% endif %}
+
+    <h1 class="portal-home-headline">
+      {{ portal_headline }}
+      <span class="portal-home-headline-accent">{{ _("O seu hub de parceiro.") }}</span>
+    </h1>
+
+    <p class="portal-home-subheadline">{{ portal_subheadline }}</p>
+
+    {% if portal_user_name %}
+    <p class="portal-home-greeting">{{ _("Olá,") }} <strong>{{ portal_user_name }}</strong></p>
+    {% endif %}
+
+    <a href="{{ portal_cta_route }}" class="portal-home-cta">
+      Explorar portal <span aria-hidden="true">→</span>
+    </a>
+  </div>
+
+  <div class="portal-home-illustration" aria-hidden="true">
+    <svg viewBox="0 0 720 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="40" y="180" width="120" height="80" rx="8" stroke="#0f172a" stroke-width="2.5"/>
+      <rect x="55" y="195" width="90" height="50" rx="4" stroke="#0f172a" stroke-width="2"/>
+      <path d="M70 210h60M70 225h40" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="100" cy="130" r="28" stroke="#0f172a" stroke-width="2.5"/>
+      <path d="M100 102v-12M88 96h24" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M72 158c8 18 48 18 56 0" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>
+
+      <rect x="300" y="160" width="140" height="90" rx="8" stroke="#0f172a" stroke-width="2.5"/>
+      <rect x="315" y="175" width="110" height="60" rx="4" stroke="#0f172a" stroke-width="2"/>
+      <path d="M330 195h80M330 210h55" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="370" cy="110" r="30" stroke="#0f172a" stroke-width="2.5"/>
+      <path d="M355 125l15 15 25-30" stroke="#0284c7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <rect x="540" y="170" width="130" height="85" rx="8" stroke="#0f172a" stroke-width="2.5"/>
+      <path d="M560 200h90M560 215h60M560 230h75" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="605" cy="120" r="28" stroke="#0f172a" stroke-width="2.5"/>
+      <path d="M590 135c5-10 25-10 30 0" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M580 148c10 16 40 16 50 0" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>
+
+      <path d="M160 200c40-30 80-30 120 0" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="6 6"/>
+      <path d="M440 195c35-25 70-25 100 0" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="6 6"/>
+      <circle cx="360" cy="60" r="18" stroke="#0284c7" stroke-width="2"/>
+      <path d="M352 60h16M360 52v16" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  {% if portal_feature_cards %}
+  <div class="portal-home-cards">
+    {% for card in portal_feature_cards %}
+    <a href="{{ card.route }}" class="portal-home-card">
+      <div class="portal-home-card-icon" style="--card-icon-color: {{ card.icon_color }}">
+        <i class="{{ card.icon }}" aria-hidden="true"></i>
+      </div>
+      <h3 class="portal-home-card-title">{{ _(card.title) }}</h3>
+      <p class="portal-home-card-description">{{ card.description }}</p>
+      <span class="portal-home-card-link">{{ _("Ver mais") }} →</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% else %}
+  {% if introduction %}
+    <p>{{ introduction }}</p>
+  {% endif %}
+
+  {% include list_template %}
+
+  {% if list_footer %}
+    {{ list_footer }}
+  {% endif %}
+{% endif %}
+{% endblock %}

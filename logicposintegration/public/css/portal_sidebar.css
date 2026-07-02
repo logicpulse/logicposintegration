@@ -1,66 +1,130 @@
-/* Portal sidebar — loaded on all website pages */
+@import url("/assets/logicposintegration/vendor/fontawesome/css/all.min.css");
+
+/* Portal sidebar — minimalist uppercase nav */
 .web-sidebar.portal-sidebar {
-  padding-top: 0.5rem;
+  --logicpulse-blue: #0284c7;
+  padding-top: 1.75rem;
 }
 
-.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a,
-.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a:visited {
+.web-sidebar.portal-sidebar .portal-sidebar-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin: 0 0 1.25rem;
+}
+
+.web-sidebar.portal-sidebar .portal-sidebar-nav {
+  margin: 0;
+  padding: 0;
+}
+
+.web-sidebar.portal-sidebar .portal-sidebar-nav-account {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.web-sidebar.portal-sidebar .sidebar-item {
+  width: 100%;
+}
+
+/* Reset Frappe default sidebar link styles */
+.web-sidebar.portal-sidebar a.portal-sidebar-link,
+.web-sidebar.portal-sidebar a.portal-sidebar-link:visited,
+.web-sidebar.portal-sidebar a.portal-sidebar-link:hover,
+.web-sidebar.portal-sidebar a.portal-sidebar-link:focus,
+.web-sidebar.portal-sidebar a.portal-sidebar-link.active,
+.web-sidebar.portal-sidebar a.portal-sidebar-link.active:visited,
+.web-sidebar.portal-sidebar a.portal-sidebar-link.active:hover,
+.web-sidebar.portal-sidebar a.portal-sidebar-link.active:focus {
   display: flex !important;
   align-items: center;
   gap: 0.65rem;
-  padding: 0.55rem 0.85rem !important;
-  border-radius: 8px;
-  color: #475569 !important;
-  font-weight: 500;
-  transition: background 0.12s ease, color 0.12s ease;
+  position: relative !important;
+  width: 100% !important;
+  padding: 1.1rem 0 !important;
+  margin-top: 0 !important;
+  color: #1a1a1a !important;
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.2;
   text-decoration: none !important;
-  border: none;
-  background: transparent;
+  background: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
 }
 
-.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a i {
-  width: 18px;
+.web-sidebar.portal-sidebar a.portal-sidebar-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  background-color: transparent;
+  transition: background-color 0.12s ease;
+}
+
+.web-sidebar.portal-sidebar a.portal-sidebar-link:hover::after,
+.web-sidebar.portal-sidebar a.portal-sidebar-link:focus::after,
+.web-sidebar.portal-sidebar a.portal-sidebar-link.active::after {
+  background-color: #0284c7;
+}
+
+.web-sidebar.portal-sidebar a.portal-sidebar-link .portal-sidebar-icon {
+  width: 14px;
+  font-size: 13px;
   text-align: center;
-  color: #94a3b8;
-  font-size: 14px;
+  color: currentColor !important;
   flex-shrink: 0;
+  opacity: 0.85;
 }
 
-.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a span {
-  line-height: 1.3;
-}
-
-.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a:hover,
-.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a:focus {
-  background: #f1f5f9 !important;
-  color: #0284c7 !important;
-  text-decoration: none !important;
-  outline: none;
-}
-
-.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a:hover i,
-.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a:focus i {
-  color: #0284c7;
-}
-
-.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a.active,
-.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a.active:visited,
-.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a.active:hover,
-.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a.active:focus {
-  background: #e0f2fe !important;
-  color: #0284c7 !important;
-  font-weight: 600;
-}
-
-.web-sidebar.portal-sidebar .sidebar-items .sidebar-item a.active i {
-  color: #0284c7;
+.web-sidebar.portal-sidebar a.portal-sidebar-link .portal-sidebar-label {
+  flex: 1;
 }
 
 .web-sidebar.portal-sidebar .sidebar-group h6 {
-  font-size: 11px;
+  font-size: 0.6875rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.12em;
   color: #94a3b8;
-  margin: 1rem 0 0.35rem;
-  padding: 0 0.85rem;
+  margin: 1.75rem 0 0.25rem;
+  padding: 0;
+}
+
+.web-sidebar.portal-sidebar .portal-sidebar-search {
+  margin: 0.75rem 0;
+}
+
+.web-sidebar.portal-sidebar .portal-sidebar-search .form-control {
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 0;
+  padding-left: 0;
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: none;
+}
+
+.web-sidebar.portal-sidebar .portal-sidebar-search .form-control:focus {
+  border-bottom-color: #1a1a1a;
+  box-shadow: none;
+}
+
+/* Kill Frappe generic sidebar active pill */
+.web-sidebar.portal-sidebar .sidebar-item a.active:not(.portal-sidebar-link) {
+  background: none !important;
+  background-color: transparent !important;
+  border-radius: 0 !important;
 }

@@ -1,0 +1,37 @@
+{%- set status_color = portal_status_colors.get(doc.status, "blue") if portal_status_colors else "blue" -%}
+{%- set percent = frappe.utils.cint(doc.percent_complete or 0) -%}
+{%- set project_href = "/projects?project=" + (doc.name | urlencode) -%}
+<div class="portal-project-list-row">
+	<a href="{{ project_href }}" class="portal-project-list-row-link">{{ doc.project_name }}</a>
+
+	<div class="portal-project-col-main">
+		<span class="portal-list-row-id">{{ doc.name }}</span>
+		<span class="portal-list-row-title">{{ doc.project_name }}</span>
+		{% if doc.project_type %}
+		<span class="portal-list-row-subtitle">{{ doc.project_type }}</span>
+		{% endif %}
+	</div>
+
+	<div class="portal-project-col-status">
+		<span class="portal-list-badge portal-list-badge-{{ status_color }}">{{ _(doc.status) }}</span>
+	</div>
+
+	<div class="portal-project-col-progress">
+		<div
+			class="portal-list-progress-bar"
+			role="progressbar"
+			aria-valuenow="{{ percent }}"
+			aria-valuemin="0"
+			aria-valuemax="100"
+			aria-label="{{ percent }}%"
+			title="{{ percent }}%"
+		>
+			<span class="{{ 'is-complete' if percent == 100 else '' }}" style="width: {{ percent }}%"></span>
+		</div>
+	</div>
+
+	<div class="portal-project-col-updated">
+		<span class="portal-list-row-date">{{ frappe.utils.pretty_date(doc.modified) }}</span>
+		<i class="fa-solid fa-angle-right portal-list-row-chevron" aria-hidden="true"></i>
+	</div>
+</div>

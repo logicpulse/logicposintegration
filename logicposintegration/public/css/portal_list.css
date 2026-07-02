@@ -1,0 +1,338 @@
+.portal-list-page-header {
+  margin-bottom: 1.5rem;
+}
+
+.portal-list-page-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.portal-list-subtitle {
+  margin: 0 0 1rem;
+  color: #64748b;
+}
+
+.portal-list-empty {
+  padding: 3rem 1rem;
+  text-align: center;
+  border: 1px dashed #e2e8f0;
+  border-radius: 12px;
+  background: #fafafa;
+}
+
+.portal-list-empty-title {
+  margin: 0;
+  color: #64748b;
+}
+
+.portal-list {
+  margin-top: 0.5rem;
+}
+
+.portal-list-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 0.7fr);
+  gap: 1rem;
+  padding: 0 1.1rem 0.65rem;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 0.35rem;
+}
+
+.portal-list-columns span {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.portal-list-results {
+  display: flex;
+  flex-direction: column;
+}
+
+.portal-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 0.7fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid #f1f5f9;
+  text-decoration: none !important;
+  color: inherit !important;
+  transition: background-color 0.12s ease;
+}
+
+.portal-list-row:hover,
+.portal-list-row:focus {
+  background: #f8fafc;
+  text-decoration: none !important;
+  color: inherit !important;
+}
+
+.portal-list-row-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.portal-list-row-id {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.portal-list-row-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.portal-list-row-subtitle {
+  font-size: 0.8125rem;
+  color: #64748b;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-list-row-date-inline {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.portal-list-row-status {
+  display: flex;
+  align-items: center;
+}
+
+.portal-list-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.portal-list-badge-blue { background: #e0f2fe; color: #0284c7; }
+.portal-list-badge-green { background: #dcfce7; color: #16a34a; }
+.portal-list-badge-orange { background: #ffedd5; color: #ea580c; }
+.portal-list-badge-red { background: #fee2e2; color: #dc2626; }
+.portal-list-badge-yellow { background: #fef9c3; color: #ca8a04; }
+.portal-list-badge-grey { background: #f1f5f9; color: #64748b; }
+
+.portal-list-row-aside {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.portal-list-row-date {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.portal-list-row-amount {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.portal-list-row-chevron {
+  font-size: 0.75rem;
+  color: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.portal-list-row:hover .portal-list-row-chevron,
+.portal-list-row:focus .portal-list-row-chevron {
+  color: #0284c7;
+}
+
+.portal-list-project .portal-list-columns,
+.portal-list-project .portal-list-row,
+.portal-list[data-doctype="Project"] .portal-list-columns,
+.portal-list[data-doctype="Project"] .portal-list-row {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.55fr) minmax(0, 0.75fr) minmax(0, 0.55fr);
+}
+
+.portal-list-row-progress {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding-right: 0.5rem;
+}
+
+.portal-list-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.portal-list-progress-bar span {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  background: #0284c7;
+  border-radius: 999px;
+  transition: width 0.15s ease;
+}
+
+.portal-list-progress-bar span.is-complete {
+  background: #16a34a;
+}
+
+.portal-list-more {
+  display: flex;
+  justify-content: center;
+  padding-top: 1.25rem;
+}
+
+.portal-list-more .btn-more {
+  border-radius: 999px;
+  padding: 0.45rem 1.1rem;
+}
+
+/* Project list — fixed 4-column grid */
+.portal-project-list-head,
+.portal-project-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 7.5rem 8.5rem 6.5rem;
+  column-gap: 1rem;
+  align-items: center;
+  padding-left: 1.1rem;
+  padding-right: 1.1rem;
+}
+
+.portal-project-list-head {
+  padding-top: 0;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 0.35rem;
+}
+
+.portal-project-list-head span {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.portal-project-list-row {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  text-decoration: none !important;
+  color: inherit !important;
+  transition: background-color 0.12s ease;
+}
+
+.portal-project-list-row:hover,
+.portal-project-list-row:focus {
+  background: #f8fafc;
+  text-decoration: none !important;
+  color: inherit !important;
+}
+
+.portal-project-col-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.portal-project-col-status {
+  display: flex;
+  align-items: center;
+}
+
+.portal-project-col-progress {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.portal-project-col-updated {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .portal-list-columns {
+    display: none;
+  }
+
+  .portal-project-list-head {
+    display: none;
+  }
+
+  .portal-project-list-head,
+  .portal-project-list-row {
+    grid-template-columns: 1fr auto;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .portal-project-list-row {
+    grid-template-areas:
+      "main updated"
+      "status updated"
+      "progress updated";
+    row-gap: 0.55rem;
+  }
+
+  .portal-project-col-main { grid-area: main; }
+  .portal-project-col-status { grid-area: status; }
+  .portal-project-col-progress { grid-area: progress; }
+  .portal-project-col-updated {
+    grid-area: updated;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .portal-list-project .portal-list-row,
+  .portal-list[data-doctype="Project"] .portal-list-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "main aside"
+      "status aside"
+      "progress aside";
+    row-gap: 0.55rem;
+  }
+
+  .portal-list-row-main { grid-area: main; }
+  .portal-list-row-status { grid-area: status; }
+  .portal-list-row-progress { grid-area: progress; }
+  .portal-list-row-aside {
+    grid-area: aside;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .portal-list-row-date-inline {
+    display: none;
+  }
+}

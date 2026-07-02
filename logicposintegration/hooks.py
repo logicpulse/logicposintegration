@@ -30,9 +30,11 @@ app_include_js = "/assets/logicposintegration/js/pos_stock_grid.js"
 
 # include js, css files in header of web template
 web_include_css = [
-	"/assets/frappe/css/fonts/fontawesome/font-awesome.min.css",
+	"/assets/logicposintegration/vendor/fontawesome/css/all.min.css",
 	"/assets/logicposintegration/css/portal_sidebar.css",
 	"/assets/logicposintegration/css/portal_projects.css",
+	"/assets/logicposintegration/css/portal_home.css",
+	"/assets/logicposintegration/css/portal_list.css",
 ]
 # web_include_js = "/assets/logicposintegration/js/logicposintegration.js"
 
@@ -101,6 +103,8 @@ jinja = {
 update_website_context = [
 	"logicposintegration.utils.portal_jinja.update_portal_project_context",
 ]
+
+before_request = ["logicposintegration.utils.portal_list.ensure_list_context_patch"]
 
 # Installation
 # ------------

@@ -12,11 +12,39 @@
 
 {% block head_include %}
 
-  <link rel="stylesheet" href="/assets/frappe/css/fonts/fontawesome/font-awesome.min.css">
-
   <link rel="stylesheet" href="/assets/frappe/node_modules/frappe-gantt/dist/frappe-gantt.css">
 
   <link rel="stylesheet" href="/assets/logicposintegration/css/portal_projects.css">
+
+  <style>
+    #tasks-gantt-view .gantt-container .popup-wrapper {
+      background: #fff !important;
+      color: #0f172a !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 12px !important;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12) !important;
+      padding: 0 !important;
+      min-width: 280px;
+      overflow: hidden;
+    }
+
+    #tasks-gantt-view .gantt-container .popup-wrapper .pointer {
+      display: none !important;
+    }
+
+    #tasks-gantt-view .gantt-container .popup-wrapper .portal-gantt-popup-title {
+      color: #0f172a !important;
+    }
+
+    #tasks-gantt-view .gantt-container .popup-wrapper .portal-gantt-popup-label {
+      color: #94a3b8 !important;
+    }
+
+    #tasks-gantt-view .gantt-container .popup-wrapper .portal-gantt-popup-dates,
+    #tasks-gantt-view .gantt-container .popup-wrapper .portal-gantt-popup-value {
+      color: #64748b !important;
+    }
+  </style>
 
 {% endblock %}
 
@@ -74,7 +102,7 @@
 
     <a class="btn btn-primary btn-sm" href="/tasks/new?project={{ doc.project_name | urlencode }}">
 
-      <i class="fa fa-plus"></i> {{ _("New task") }}
+      <i class="fa-solid fa-plus"></i> {{ _("New task") }}
 
     </a>
 
@@ -82,33 +110,114 @@
 
 
 
-  <ul class="nav portal-view-tabs project-tasks-view-tabs">
+  <style>
+    ul.project-tasks-view-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      list-style: none;
+      padding: 0;
+      margin: 0 0 1.25rem;
+      gap: 0;
+      background: none !important;
+      border: none !important;
+      border-bottom: 1px solid #f1f5f9;
+    }
 
-    <li class="nav-item">
+    ul.project-tasks-view-tabs .portal-view-tab-item {
+      margin: 0;
+    }
 
-      <a class="nav-link portal-view-tab project-tasks-view-tab active" href="#" data-view="list">
+    ul.project-tasks-view-tabs a.portal-view-tab {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.75rem 1.25rem;
+      color: #1a1a1a !important;
+      font-size: 0.8125rem !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      line-height: 1.2;
+      text-decoration: none !important;
+      border: none !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      transition: background-color 0.12s ease, color 0.12s ease;
+    }
 
-        <i class="fa fa-list-ul"></i> {{ _("List") }}
+    ul.project-tasks-view-tabs a.portal-view-tab::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 2px;
+      background-color: transparent;
+      transition: background-color 0.12s ease;
+    }
+
+    ul.project-tasks-view-tabs a.portal-view-tab i {
+      width: 14px;
+      font-size: 13px;
+      text-align: center;
+      opacity: 0.85;
+    }
+
+    ul.project-tasks-view-tabs a.portal-view-tab:hover,
+    ul.project-tasks-view-tabs a.portal-view-tab:focus {
+      color: var(--primary, #0284c7) !important;
+      background-color: var(--primary-light, #e0f2fe) !important;
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    ul.project-tasks-view-tabs a.portal-view-tab:hover::after,
+    ul.project-tasks-view-tabs a.portal-view-tab:focus::after,
+    ul.project-tasks-view-tabs a.portal-view-tab.active::after {
+      background-color: #0284c7;
+    }
+
+    ul.project-tasks-view-tabs a.portal-view-tab.active,
+    ul.project-tasks-view-tabs a.portal-view-tab.active:hover,
+    ul.project-tasks-view-tabs a.portal-view-tab.active:focus {
+      color: var(--primary, #0284c7) !important;
+      background-color: var(--primary-light, #e0f2fe) !important;
+      box-shadow: none !important;
+    }
+  </style>
+
+
+
+  <ul class="list-unstyled portal-view-tabs project-tasks-view-tabs">
+
+    <li class="portal-view-tab-item">
+
+      <a class="portal-view-tab project-tasks-view-tab active" href="#" data-view="list">
+
+        <i class="fa-solid fa-list-ul"></i> {{ _("List") }}
 
       </a>
 
     </li>
 
-    <li class="nav-item">
+    <li class="portal-view-tab-item">
 
-      <a class="nav-link portal-view-tab project-tasks-view-tab" href="#" data-view="gantt">
+      <a class="portal-view-tab project-tasks-view-tab" href="#" data-view="gantt">
 
-        <i class="fa fa-bar-chart"></i> {{ _("Gantt") }}
+        <!-- <i class="fa-solid fa-chart-column"></i> {{ _("Gantt") }} -->
+        <i class="fa-solid fa-chart-gantt"></i> Cronograma
 
       </a>
 
     </li>
 
-    <li class="nav-item">
+    <li class="portal-view-tab-item">
 
-      <a class="nav-link portal-view-tab project-tasks-view-tab" href="#" data-view="kanban">
+      <a class="portal-view-tab project-tasks-view-tab" href="#" data-view="kanban">
 
-        <i class="fa fa-columns"></i> {{ _("Kanban") }}
+        <i class="fa-solid fa-columns"></i> {{ _("Kanban") }}
 
       </a>
 
@@ -132,13 +241,11 @@
 
           <div class="col-sm-2 col-6"><b>{{ _("Status") }}</b></div>
 
-          <div class="col-sm-2 col-6"><b>{{ _("Priority") }}</b></div>
-
-          <div class="col-sm-2 col-6"><b>{{ _("End Date") }}</b></div>
+          <div class="col-sm-2 col-6"><b>{{ _("Priority") }}</b></div> 
 
           <div class="col-sm-2 col-6"><b>{{ _("Assignment") }}</b></div>
 
-          <div class="col-sm-1 col-12 text-sm-right"><b>{{ _("Modified") }}</b></div>
+          <div class="col-sm-3 col-6"><b>{{ _("End Date") }}</b></div>
 
         </div>
 
@@ -250,7 +357,7 @@
 
         {% else %}
 
-          <p class="text-muted small mb-0">{{ _("No tasks") }}</p>
+          <p class="text-muted small mb-0">Sem tarefas</p>
 
         {% endif %}
 
