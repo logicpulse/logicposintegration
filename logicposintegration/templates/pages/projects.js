@@ -18,6 +18,25 @@ frappe.ready(function () {
 
 	var gantt_tasks = [];
 	var gantt_task_map = {};
+	var gantt_i18n = {};
+
+	try {
+		gantt_i18n = JSON.parse(document.getElementById("project-gantt-i18n").textContent || "{}");
+	} catch (e) {
+		gantt_i18n = {};
+	}
+
+	function gantt_label(key, fallback) {
+		return gantt_i18n[key] || fallback || key;
+	}
+
+	function gantt_status_label(status) {
+		return (gantt_i18n.status_labels && gantt_i18n.status_labels[status]) || status;
+	}
+
+	function gantt_priority_label(priority) {
+		return (gantt_i18n.priority_labels && gantt_i18n.priority_labels[priority]) || priority;
+	}
 
 	try {
 		gantt_tasks = JSON.parse(document.getElementById("project-gantt-data").textContent || "[]");
@@ -93,7 +112,7 @@ frappe.ready(function () {
 			'<span class="portal-status-pill portal-status-' +
 			color_key +
 			'">' +
-			frappe.utils.escape_html(__(status)) +
+			frappe.utils.escape_html(gantt_status_label(status)) +
 			"</span>"
 		);
 	}
@@ -107,7 +126,7 @@ frappe.ready(function () {
 			'<span class="portal-priority-pill portal-priority-' +
 			color_key +
 			'">' +
-			frappe.utils.escape_html(__(priority)) +
+			frappe.utils.escape_html(gantt_priority_label(priority)) +
 			"</span>"
 		);
 	}
@@ -191,22 +210,22 @@ frappe.ready(function () {
 			"</div></div>" +
 			'<div class="portal-gantt-popup-body">' +
 			'<div class="portal-gantt-popup-row"><span class="portal-gantt-popup-label">' +
-			__("Status") +
+			gantt_label("status", "Status") +
 			'</span><span class="portal-gantt-popup-value">' +
 			build_status_pill(meta.status) +
 			"</span></div>" +
 			'<div class="portal-gantt-popup-row"><span class="portal-gantt-popup-label">' +
-			__("Priority") +
+			gantt_label("priority", "Priority") +
 			'</span><span class="portal-gantt-popup-value">' +
 			build_priority_pill(meta.priority) +
 			"</span></div>" +
 			'<div class="portal-gantt-popup-row"><span class="portal-gantt-popup-label">' +
-			__("Progress") +
+			gantt_label("progress", "Progress") +
 			'</span><span class="portal-gantt-popup-value">' +
 			frappe.utils.escape_html(String(progress)) +
 			"</span></div>" +
 			'<div class="portal-gantt-popup-row"><span class="portal-gantt-popup-label">' +
-			__("Assignment") +
+			gantt_label("assignment", "Assignment") +
 			'</span><span class="portal-gantt-popup-value">' +
 			build_assignee_avatars(meta.assignees) +
 			"</span></div></div>" +
@@ -214,7 +233,7 @@ frappe.ready(function () {
 			'<a href="' +
 			task_url +
 			'">' +
-			__("Open task") +
+			gantt_label("open_task", "Open task") +
 			" →</a>" +
 			"</div></div>"
 		);
@@ -228,7 +247,7 @@ frappe.ready(function () {
 		if (!gantt_tasks.length) {
 			$("#project-gantt").html(
 				'<p class="text-muted text-center py-5">' +
-					(__("No tasks available for Gantt view") || "No tasks available for Gantt view") +
+					(gantt_label("no_tasks_gantt", "No tasks available for Gantt view")) +
 					"</p>"
 			);
 			return;

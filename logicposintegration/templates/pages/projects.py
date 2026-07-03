@@ -9,6 +9,31 @@ from logicposintegration.utils.portal_jinja import PRIORITY_COLORS, STATUS_COLOR
 
 DEFAULT_GANTT_COLOR = "#02A8E5"
 
+GANTT_STATUS_OPTIONS = [
+	"Open",
+	"Working",
+	"Pending Review",
+	"Overdue",
+	"Completed",
+	"Cancelled",
+	"Template",
+]
+
+GANTT_PRIORITY_OPTIONS = ["Low", "Medium", "High", "Urgent"]
+
+
+def get_gantt_i18n():
+	return {
+		"status": frappe._("Status"),
+		"priority": frappe._("Priority"),
+		"progress": frappe._("Progress"),
+		"assignment": frappe._("Assignment"),
+		"open_task": frappe._("Open task"),
+		"no_tasks_gantt": frappe._("No tasks available for Gantt view"),
+		"status_labels": {option: frappe._(option) for option in GANTT_STATUS_OPTIONS},
+		"priority_labels": {option: frappe._(option) for option in GANTT_PRIORITY_OPTIONS},
+	}
+
 
 def get_context(context):
 	erpnext_get_context(context)
@@ -19,6 +44,7 @@ def get_context(context):
 	context.status_colors = STATUS_COLORS
 	context.priority_colors = PRIORITY_COLORS
 	context.gantt_tasks = json.dumps(get_gantt_tasks(context.doc.name))
+	context.gantt_i18n = json.dumps(get_gantt_i18n(), default=str)
 	context.kanban_columns = get_kanban_columns(context.doc.name)
 	return context
 

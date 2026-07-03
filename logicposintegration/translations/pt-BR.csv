@@ -1,1 +1,18 @@
 Quotation,Cotação
+Status,Estado
+Priority,Prioridade
+Progress,Progresso
+Assignment,Atribuição
+Open task,Abrir tarefa
+No tasks available for Gantt view,Sem tarefas disponíveis para o cronograma
+Open,Aberto
+Working,Em andamento
+Pending Review,Revisão pendente
+Overdue,Atrasado
+Completed,Concluído
+Cancelled,Cancelado
+Template,Modelo
+Low,Baixa
+Medium,Média
+High,Alta
+Urgent,Urgente
