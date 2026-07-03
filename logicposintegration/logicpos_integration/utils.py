@@ -63,7 +63,6 @@ def _pos_url(company: str | None, path: str) -> str:
     p = path if path.startswith("/") else f"/{path}"
     return f"{root}{p}"
 
-
 def get_user_company():
     user = frappe.session.user
 
@@ -71,7 +70,6 @@ def get_user_company():
         frappe.throw("Utilizador não autenticado")
 
     return _get_company_for_user(user)
-
 
 def _get_company_for_user(user: str) -> str:
     companies = frappe.get_all(
@@ -148,7 +146,6 @@ def login_to_pos(company: str | None = None, user: str | None = None, force: boo
     _do_login(target_user, company)
     return {"success": True, "message": "Login no POS realizado com sucesso"}
 
-
 def _decode_jwt_exp(token: str) -> int | None:
     """Extrai o claim 'exp' (Unix timestamp) do payload do JWT sem verificar assinatura."""
     try:
@@ -162,7 +159,6 @@ def _decode_jwt_exp(token: str) -> int | None:
     except Exception:
         return None
 
-
 def _ttl_from_jwt(token: str) -> int:
     """Calcula o TTL em segundos até à expiração do JWT (com 60s de margem)."""
     exp = _decode_jwt_exp(token)
@@ -171,11 +167,9 @@ def _ttl_from_jwt(token: str) -> int:
     now = int(datetime.now(timezone.utc).timestamp())
     return max(exp - now - 60, 60)
 
-
 def _save_pos_token(user: str, token: str) -> None:
     ttl = _ttl_from_jwt(token)
     frappe.cache().set_value(f"{_POS_TOKEN_CACHE_KEY}:{user}", token, expires_in_sec=ttl)
-
 
 def get_pos_token(user: str | None = None):
     """Devolve a resposta de autenticação POS guardada em cache.
@@ -185,12 +179,10 @@ def get_pos_token(user: str | None = None):
         user = frappe.session.user
     return frappe.cache().get_value(f"{_POS_TOKEN_CACHE_KEY}:{user}")
 
-
 def clear_pos_token(user: str | None = None) -> None:
     if not user:
         user = frappe.session.user
     frappe.cache().delete_value(f"{_POS_TOKEN_CACHE_KEY}:{user}")
-
 
 def get_pos_auth_headers(
     user: str | None = None, 
@@ -213,7 +205,6 @@ def get_pos_auth_headers(
     if with_accept:
         headers["Accept"] = "application/json"
     return headers
-
 
 def pos_request(method: str, endpoint: str, company: str | None = None, **kwargs):
     """Wrapper para chamadas ao POS com re-login automático em caso de 401.
@@ -263,7 +254,6 @@ def _extract_pos_token(response) -> str:
 
     return (response.text or "").strip().strip('"')
 
-
 def _format_pos_login_error(response) -> str:
     """Formata a resposta de erro do POS (400, etc.)."""
     try:
@@ -294,7 +284,6 @@ def _format_pos_login_error(response) -> str:
             parts.append(name)
 
     return " — ".join(parts) if parts else f"HTTP {response.status_code}"
-
 
 def _do_login(user: str, company: str | None = None) -> None:
     """Login silencioso ao POS (sem whitelist). Guarda o novo token em cache."""
@@ -335,7 +324,6 @@ def _do_login(user: str, company: str | None = None) -> None:
         frappe.throw("O POS não devolveu token após login")
 
     _save_pos_token(user, token)
-
 
 def _success(message: str):
     return {"success": True, "message": message}

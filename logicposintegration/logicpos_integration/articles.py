@@ -8,6 +8,8 @@ from logicposintegration.logicpos_integration.utils import (
     get_user_company
 ) 
 
+POS_STOCK_COMMENT_MARKER = "actualizou o stock no POS"
+
 @frappe.whitelist()
 def get_article_by_code(code, company=None):
     requests = _get_requests()
@@ -151,9 +153,6 @@ def get_on_hand_total_for_article(code: str, company: str | None = None) -> dict
         ) 
         frappe.throw("Erro de comunicação com o POS")
 
-POS_STOCK_COMMENT_MARKER = "actualizou o stock no POS"
-
-
 def _pos_stock_already_updated(purchase_order: str) -> bool:
     return bool(
         frappe.db.exists(
@@ -167,7 +166,6 @@ def _pos_stock_already_updated(purchase_order: str) -> bool:
         )
     )
 
-
 def _finalize_purchase_order_after_pos_stock_sync(purchase_order: str) -> None:
     po = frappe.get_doc("Purchase Order", purchase_order)
 
@@ -179,7 +177,6 @@ def _finalize_purchase_order_after_pos_stock_sync(purchase_order: str) -> None:
 
     if po.status not in ("Cancelled", "Closed"):
         po.update_status("Closed")
-
 
 def _build_stock_movement_item(item_code: str, qty: float, rate: float, company: str) -> dict:
     article = get_article_by_code(item_code, company)
@@ -195,7 +192,6 @@ def _build_stock_movement_item(item_code: str, qty: float, rate: float, company:
         "quantity": float(qty),
         "price": float(rate),
     }
-
 
 @frappe.whitelist()
 def update_stock(

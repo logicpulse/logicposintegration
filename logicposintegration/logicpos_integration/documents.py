@@ -66,7 +66,6 @@ def create_pos_document(doctype: str, docname: str, payload, company: str):
         )
         frappe.throw("Erro técnico ao comunicar com o POS")
 
-
 @frappe.whitelist()
 def generate_pdf_document(document_id: str | None = None, company: str | None = None): 
     requests = _get_requests()
