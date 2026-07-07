@@ -20,11 +20,12 @@ datas = {
 
 
 class PDF(FPDF):
-	def __init__(self, client_name="", footer_description="", article=""):
+	def __init__(self, client_name="", footer_description="", article="", version=""):
 		super().__init__()
 		self.client_name = client_name
 		self.footer_description = footer_description
 		self.article = article
+		self.version = version
 
 	def _omit_header_footer(self) -> bool:
 		if self.page_no() == 1:
@@ -45,7 +46,9 @@ class PDF(FPDF):
 		self.set_font("helvetica", style="B", size=9) 
 		self.set_draw_color(27, 151, 211) # border color
 		self.ln(10)
-		self.cell(80, 5, self.client_name, border=1, align=Align.L, fill=True)  
+		self.cell(80, 5, self.client_name, border=1, align=Align.L, fill=True) 
+		self.cell(85, 5, "", border=0, align=Align.L, fill=False)  
+		self.cell(22, 5, f"PROP. {self.version}", border=1, align=Align.L, fill=True)  
 		self.ln(15)
 
 	def footer(self):
@@ -62,7 +65,7 @@ class PDF(FPDF):
 		return super().write_html(text, *args, **kwargs)
 
 @frappe.whitelist()
-def generate_proposal(article: str, client: str, currency: str, items=None) -> str:
+def generate_proposal(article: str, version: str, client: str, currency: str, terms: str,  items=None) -> str:
 	try:
 		items = frappe.parse_json(items)
 		if items is None:
@@ -74,6 +77,7 @@ def generate_proposal(article: str, client: str, currency: str, items=None) -> s
 			client_name=client,
 			footer_description=datas.get(article).get("footer_description"),
 			article=article,
+			version=version
 		)
 		doc.set_page_background(get_cover(article, 'capa.png'))
 		doc.add_page()  
@@ -81,7 +85,7 @@ def generate_proposal(article: str, client: str, currency: str, items=None) -> s
 		doc.add_page()  
 		add_fonts(doc) 
 		
-		fill_document(doc, article, client, currency, items)
+		fill_document(doc, article, version, client, currency, terms, items)
 
 		file_name = f"ppt_{article}_{currency.lower()}_{client.lower()}.pdf" 
 		public_file_path = frappe.utils.get_site_path("public", "files", file_name) 
@@ -98,13 +102,11 @@ def generate_proposal(article: str, client: str, currency: str, items=None) -> s
 		frappe.log_error(frappe.get_traceback(), "Error")
 		frappe.throw(f"Erro ao gerar proposta: {str(err)}")
 
-
 def _proposal_item_group(item: dict) -> str:
 	g = item.get("item_group") or item.get("group") or item.get("category")
 	if g:
 		return str(g).strip()
 	return "Outros"
-
 
 def _proposal_line_total(item: dict) -> float:
 	amt = item.get("amount")
@@ -114,7 +116,6 @@ def _proposal_line_total(item: dict) -> float:
 	qty = float(item.get("qty") or 0)
 	return rate * qty
 
-
 def _proposal_is_oferta(item: dict) -> bool:
 	if item.get("oferta") or item.get("is_offer"):
 		return True
@@ -123,7 +124,6 @@ def _proposal_is_oferta(item: dict) -> bool:
 		return False
 	rate = float(item.get("rate") or item.get("price_list_rate") or 0)
 	return rate == 0
-
 
 def _format_pt_amount(value: float, decimals: int = 2) -> str:
 	n = float(value)
@@ -135,10 +135,8 @@ def _format_pt_amount(value: float, decimals: int = 2) -> str:
 	num = f"{w},{frac:0{decimals}d}"
 	return f"-{num}" if neg else num
 
-
 def _format_money_proposal(value: float, currency: str) -> str:
 	return f"{_format_pt_amount(value)} {currency}"
-
 
 def _ordered_item_groups(items: list):
 	groups = defaultdict(list)
@@ -150,7 +148,6 @@ def _ordered_item_groups(items: list):
 			order.append(g)
 		groups[g].append(item)
 	return [(name, groups[name]) for name in order]
-
 
 def add_grouped_prices_table(doc: FPDF, currency: str, items: list):
 	# items = items or []
@@ -226,7 +223,6 @@ def add_grouped_prices_table(doc: FPDF, currency: str, items: list):
 		trow.cell("TOTAL", colspan=4, style=total_ff, align=Align.L)
 		trow.cell(_format_money_proposal(grand_total, currency), style=total_ff)
 
-
 def get_cover(article: str, filename: str) -> str:
 	try:
 		cover_image_path = os.path.join(root_dir, 'assets', article, filename)
@@ -251,14 +247,14 @@ def add_fonts(doc: FPDF):
 	doc.add_font("calibri", style="", fname=calibri_regular)
 	doc.set_font(family="calibri", style="", size=11)
 
-def fill_document(doc: FPDF, article: str, client: str, currency: str, items: list):
+def fill_document(doc: FPDF, article: str, version: str, client: str, currency: str, terms: str, items: list):
 	if article == "q.track":
-		fill_q_track(doc, article, client, currency, items)
+		fill_q_track(doc, article, version, client, currency, terms, items)
 	elif article == "q.track.survey":
-		fill_q_track_survey(doc, article, client, currency, items)
+		fill_q_track_survey(doc, article, version, client, currency, terms, items)
 
-def fill_q_track(doc: FPDF, article: str, client: str, currency: str, items: list):
-	info_section(doc, article, client, "5.png")
+def fill_q_track(doc: FPDF, article: str, version: str, client: str, currency: str, terms: str, items: list):
+	info_section(doc, article, version, client, "5.png")
 	subtitle(doc, "INDÍCE")
 	# paragraph(doc)
 
@@ -423,30 +419,8 @@ def fill_q_track(doc: FPDF, article: str, client: str, currency: str, items: lis
 		<p style="text-align: center;"><u>NOTA: Aos valores apresentados acresce os impostos em vigor à data da faturação.</u></p>
 	""")
 	doc.add_page()
-	subtitle(doc, "3.2.	Condições")
-	doc.set_font(style="", size=11)
-	doc.write_html("""
-		<p style="line-height: 1.7; text-align: justify;"><strong><em><u>Serviços incluídos</u></em></strong></p>
-		<ul style="line-height: 1.7;">
-			<li style="text-align: justify;">Montagem e fixação do Hardware;</li>
-			<li style="text-align: justify;">Todas as ligações (rede elétrica, Ethernet, etc.) deverão estar nos locais de instalação;</li>
-		</ul>
-		<p style="line-height: 1.0; text-align: justify;">(Nota: distâncias de cablagem superiores a 2 metros serão orçamentadas em separado.)</p>
-		<ul style="line-height: 1.7;">
-			<li style="text-align: justify;">Instalação de softwares no servidor e de 1 posto de trabalho (no caso de licença adicional) + Instalação da aplicação <strong><font color="#1b97d3">Q</font>.track</strong> nos Postos de atendimento (nº de instalação dependendo da versão da licença);</li>
-			<li style="text-align: justify;">Formação a 1 “master-user” e utilizadores (todas as formações num único dia).</li>
-		</ul>
-		<p><strong><em><u>Exclusões à proposta</u></em></strong></p>
-		<p style="line-height: 1.7; text-align: justify;">Não estão incluídos trabalhos de construção civil para instalação dos equipamentos nem cablagem necessária. <br />Esta proposta não inclui deslocações adicionais que sejam necessárias por impossibilidade de acesso ou avaria dos equipamentos já existentes que impossibilite a conclusão da instalação, e que vão para além do que incluído nesta proposta. Se existir uma deslocação adicional será cobrada com base numa taxa de <strong>1 USD</strong>/ km.</p>
-		<p><strong><em><u>Garantia</u></em></strong></p>
-		<p style="line-height: 1.7; text-align: justify;">Todos os equipamentos têm uma garantia de 12 meses contra defeito de fabrico e montagem. <br />São disponibilizadas atualizações do software grátis durante um período de 12 meses.</p>
-		<p><strong><em><u>Prazo de entrega</u></em></strong></p>
-		<p style="line-height: 1.7; text-align: justify;">No máximo 6 semanas, incluindo tempo de transporte e instalação, após a receção da encomenda devidamente clara e específica, assinatura do respetivo contrato de fornecimento e pagamento dos 50% da adjudicação.</p>
-		<p><strong><em><u>Condições de Pagamento de Aquisição</u></em></strong></p>
-		<p style="line-height: 1.7; text-align: justify;"><strong>50%</strong> Com a adjudicação + <strong>50%</strong> com a entrega do equipamento.</p>
-		<p><strong><em><u>Validade da proposta</u></em></strong></p>
-		<p  style="line-height: 1.7; text-align: justify;">30 Dias</p>
-	""") 
+	subtitle(doc, "3.2.	Condições") 
+	doc.write_html(terms) 
 	change_title(doc, "4.	AS NOSSAS SOLUÇÕES")
 	doc.write_html("""
 		<p style="line-height: 1.7; text-align: justify;">A LogicPulse desenvolve e promove Soluções, facultando aos seus clientes competências em várias tecnologias. O nosso Portfolio de Soluções permitirá rentabilizar e credibilizar o seu negócio.
@@ -476,11 +450,11 @@ def fill_q_track(doc: FPDF, article: str, client: str, currency: str, items: lis
 	doc.set_page_background(get_cover(article, '125.png'))
 	doc.add_page()
 
-def fill_q_track_survey(doc: FPDF, article: str, client: str, currency: str, items: list):
+def fill_q_track_survey(doc: FPDF, article: str, client: str, currency: str, terms: str, items: list):
 	info_section(doc, article, client, "8.png")
 	subtitle(doc, "INDÍCE")
 
-def info_section(doc: FPDF, article: str, client: str, article_img_name: str):
+def info_section(doc: FPDF, article: str, version: str, client: str, article_img_name: str):
 	subtitle(doc, "INFO DOCUMENTO") 
 	client_data = frappe.db.get_value(
 		"Customer", 
@@ -518,7 +492,7 @@ def info_section(doc: FPDF, article: str, client: str, article_img_name: str):
 	
 	TABLE_DATA = (
 		("DATA:", "VERSÃO", "DESCRIÇÃO", "AUTORES"), 
-		(f"{date.today()}", "00", "Criação do Documento", f"{user.full_name}")
+		(f"{date.today()}", version, "Criação do Documento", f"{user.full_name}")
 	)
 
 	doc.set_font(style="", size=9)
