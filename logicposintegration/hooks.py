@@ -35,6 +35,7 @@ web_include_css = [
 	"/assets/logicposintegration/css/portal_projects.css",
 	"/assets/logicposintegration/css/portal_home.css",
 	"/assets/logicposintegration/css/portal_list.css",
+	"/assets/logicposintegration/css/portal_order.css",
 ]
 # web_include_js = "/assets/logicposintegration/js/logicposintegration.js"
 

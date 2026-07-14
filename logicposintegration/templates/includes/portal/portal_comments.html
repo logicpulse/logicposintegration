@@ -1,0 +1,251 @@
+<div class="portal-comments comment-view mb-6">
+	<h5 class="portal-comments-title">{{ _("Comments") }}</h5>
+
+	{% if not comment_list %}
+		<div class="no-comment">
+			<p class="text-muted small">{{ _("No comments yet.") }}</p>
+		</div>
+	{% endif %}
+
+	<div class="add-comment-section mb-5">
+		<div class="comment-form-wrapper">
+			<div id="comment-form">
+				<form class="new-comment">
+					<fieldset class="new-comment-fields">
+						<div class="user-details row" style="margin-bottom: 15px; display:none;">
+							<div class="comment-by col-sm-6 pb-4">
+								<div class="form-label mb-1">{{ _("Your Name") }}</div>
+								<input class="form-control comment_by" name="comment_by" type="text">
+							</div>
+							<div class="col-sm-6">
+								<div class="form-label mb-1">{{ _("Email") }}</div>
+								<input class="form-control comment_email" name="comment_email" type="email">
+							</div>
+						</div>
+						<div class="comment-text-area">
+							<div class="form-label mb-1">{{ _("Add a comment") }}</div>
+							<textarea class="form-control" name="comment" rows="4"
+								placeholder="{{ _('Write your comment…') }}"></textarea>
+							<div class="text-muted small mt-1 mb-4">{{ _("Ctrl+Enter to add comment") }}</div>
+						</div>
+						<button type="button" class="btn btn-sm btn-primary small" id="submit-comment">{{ _("Comment") }}</button>
+					</fieldset>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<hr class="add-comment-hr my-5">
+
+	<div itemscope itemtype="http://schema.org/UserComments" id="comment-list">
+		<div class="add-comment mb-5">
+			<div class="timeline-dot"></div>
+			<button type="button" class="btn btn-sm btn-primary small add-comment-button">{{ _("Add a comment") }}</button>
+		</div>
+		<div class="comment-list">
+			{% for comment in comment_list %}
+				{% include "templates/includes/comments/comment.html" %}
+			{% endfor %}
+		</div>
+	</div>
+</div>
+
+<script>
+	frappe.ready(function () {
+		let comment_count = cint("{{ comment_count or 0 }}");
+		let full_name = "";
+		let user_id = "";
+
+		let show_comment_box = function () {
+			$(".portal-comments .comment-form-wrapper").show();
+			$(".portal-comments .add-comment-hr").hide();
+			$(".portal-comments .add-comment").hide();
+		};
+
+		let hide_comment_box = function () {
+			$(".portal-comments .comment-form-wrapper").hide();
+			$(".portal-comments .add-comment-hr").show();
+			$(".portal-comments .add-comment").show();
+		};
+
+		if (!frappe.is_user_logged_in()) {
+			$(".portal-comments .add-comment-button").text("{{ _('Login to comment') }}");
+			$(".portal-comments .add-comment-button").off("click").on("click", function () {
+				window.location.href = "/login?redirect-to={{ pathname }}";
+			});
+			$(".portal-comments .comment-form-wrapper").hide();
+			return;
+		}
+
+		$(".portal-comments input.comment_by, .portal-comments input.comment_email").prop("disabled", true);
+		full_name = frappe.get_cookie("full_name");
+		user_id = frappe.get_cookie("user_id");
+		if (user_id && user_id !== "Guest") {
+			$(".portal-comments [name='comment_email']").val(user_id);
+			$(".portal-comments [name='comment_by']").val(full_name);
+		}
+
+		$(".portal-comments form").on("keydown", function (event) {
+			if (event.ctrlKey && event.keyCode === 13) {
+				$(this).find("#submit-comment").trigger("click");
+			}
+		});
+
+		$("#comment-form textarea").val("");
+
+		let n_comments = $(".portal-comments .comment-row").length;
+		if (!n_comments) {
+			show_comment_box();
+		} else {
+			hide_comment_box();
+		}
+
+		$(".portal-comments .add-comment-button").on("click", function () {
+			show_comment_box();
+		});
+
+		$(".portal-comments #submit-comment").on("click", function () {
+			var args = {
+				comment_by: $(".portal-comments [name='comment_by']").val(),
+				comment_email: $(".portal-comments [name='comment_email']").val(),
+				comment: $(".portal-comments [name='comment']").val(),
+				reference_doctype: "{{ reference_doctype or doctype }}",
+				reference_name: "{{ reference_name or name }}",
+				route: "{{ pathname }}",
+			};
+
+			if (!args.comment_by || !args.comment_email || !args.comment) {
+				frappe.msgprint("{{ _('All fields are necessary to submit the comment.') }}");
+				return false;
+			}
+
+			if (args.comment_email !== "Administrator" && !validate_email(args.comment_email)) {
+				frappe.msgprint("{{ _('Please enter a valid email address.') }}");
+				return false;
+			}
+
+			if (!args.comment.trim()) {
+				frappe.msgprint("{{ _('Please add a valid comment.') }}");
+				return false;
+			}
+
+			frappe.call({
+				btn: this,
+				type: "POST",
+				method: "logicposintegration.utils.portal_comments.add_portal_comment",
+				args: args,
+				callback: function (r) {
+					if (r.exc) {
+						if (r._server_messages) {
+							frappe.msgprint(r._server_messages);
+						}
+						return;
+					}
+					if (r.message) {
+						$(r.message).prependTo(".portal-comments .comment-list");
+						comment_count = comment_count + 1;
+					}
+					$(".portal-comments .no-comment").toggle(false);
+					$(".portal-comments #comment-form textarea").val("");
+					hide_comment_box();
+				},
+			});
+
+			return false;
+		});
+	});
+</script>
+
+<style>
+.portal-comments .portal-comments-title {
+	font-size: 1rem;
+	font-weight: 600;
+	margin: 0 0 1rem;
+	color: var(--text-color, #1a1a1a);
+}
+
+.portal-comments .add-comment-button {
+	margin-left: 35px;
+}
+
+.portal-comments .timeline-dot {
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	position: absolute;
+	top: 8px;
+	left: 23.5px;
+	background-color: var(--fg-color);
+}
+
+.portal-comments .timeline-dot::before {
+	content: " ";
+	background: var(--gray-700);
+	position: absolute;
+	top: 5px;
+	left: 5px;
+	border-radius: 50%;
+	height: 4px;
+	width: 4px;
+}
+
+.portal-comments .comment-form-wrapper {
+	display: none;
+}
+
+.portal-comments .new-comment {
+	display: flex;
+	padding: var(--padding-lg, 1.25rem);
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius-md, 8px);
+	background-color: var(--fg-color, #fff);
+}
+
+.portal-comments .new-comment-fields {
+	flex: 1;
+}
+
+.portal-comments .new-comment .form-label {
+	font-weight: 600;
+}
+
+.portal-comments .new-comment .comment-text-area textarea {
+	resize: vertical;
+}
+
+.portal-comments #comment-list {
+	position: relative;
+	padding-left: var(--padding-xl, 2rem);
+}
+
+.portal-comments #comment-list::before {
+	content: " ";
+	position: absolute;
+	top: 8px;
+	bottom: 10px;
+	border-left: 1px solid var(--dark-border-color, #d1d8dd);
+}
+
+.portal-comments .comment-row {
+	position: relative;
+}
+
+.portal-comments .comment-avatar {
+	position: absolute;
+	top: 10px;
+	left: -13.75px;
+}
+
+.portal-comments .comment-content {
+	border: 1px solid var(--border-color);
+	background-color: var(--fg-color, #fff);
+	border-radius: var(--border-radius-md, 8px);
+	padding: var(--padding-md, 1rem);
+	margin-left: 35px;
+	flex: 1;
+}
+
+.portal-comments .comment-content .content p {
+	margin-bottom: 0;
+}
+</style>
