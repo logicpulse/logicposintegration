@@ -1,0 +1,51 @@
+{% extends "templates/web.html" %}
+
+{% block head_include %}
+<link rel="stylesheet" href="/assets/logicposintegration/css/artigos.css">
+{% endblock %}
+
+{% block page_content %}
+<div class="partner-artigos" id="partner-artigos"
+	data-api-list="logicposintegration.logicpos_integration.partner_articles.get_partner_articles"
+	data-api-quote="logicposintegration.logicpos_integration.partner_articles.request_partner_quote">
+
+	<header class="partner-artigos-header">
+		<h1 class="partner-artigos-title">{{ _("Artigos") }}</h1>
+		<p class="partner-artigos-sub">{{ _("Preços da lista PVR-PT") }}</p>
+		<div class="partner-artigos-toolbar">
+			<input type="search" id="artigos-search" class="form-control partner-artigos-search"
+				placeholder="{{ _('Pesquisar por código ou nome') }}" autocomplete="off">
+			<button type="button" class="btn btn-primary partner-artigos-cart-btn" id="artigos-cart-toggle"
+				aria-expanded="false">
+				<i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
+				<span>{{ _("Carrinho") }}</span>
+				<span class="partner-artigos-cart-badge" id="artigos-cart-count">0</span>
+			</button>
+		</div>
+	</header>
+
+	<div class="partner-artigos-grid" id="artigos-grid" aria-live="polite"></div>
+	<div class="partner-artigos-pagination" id="artigos-pagination"></div>
+	<p class="partner-artigos-empty d-none" id="artigos-empty">{{ _("Nenhum artigo encontrado.") }}</p>
+
+	<aside class="partner-artigos-drawer" id="artigos-drawer" hidden>
+		<div class="partner-artigos-drawer-panel">
+			<header class="partner-artigos-drawer-header">
+				<h2>{{ _("Carrinho") }}</h2>
+				<button type="button" class="btn btn-sm btn-light" id="artigos-drawer-close">{{ _("Fechar") }}</button>
+			</header>
+			<ul class="partner-artigos-cart-list" id="artigos-cart-list"></ul>
+			<div class="partner-artigos-cart-footer">
+				<p class="partner-artigos-cart-total">{{ _("Total estimado") }}:
+					<strong id="artigos-cart-total">—</strong></p>
+				<label class="partner-artigos-notes-label" for="artigos-notes">{{ _("Notas") }}</label>
+				<textarea id="artigos-notes" class="form-control" rows="3"
+					placeholder="{{ _('Mensagem opcional para a equipa comercial') }}"></textarea>
+				<button type="button" class="btn btn-primary btn-block" id="artigos-request-quote" disabled>
+					{{ _("Pedir orçamento") }}
+				</button>
+			</div>
+		</div>
+	</aside>
+</div>
+{% endblock %}

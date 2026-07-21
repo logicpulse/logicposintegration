@@ -79,6 +79,11 @@ FEATURE_CARD_META = {
 		"icon_color": "#ea580c",
 		"description": "Gerir moradas de entrega e faturação.",
 	},
+	"/artigos": {
+		"icon": "fa-solid fa-boxes-stacked",
+		"icon_color": "#0d9488",
+		"description": "Consulte o catálogo e preços PVR-PT e peça orçamento.",
+	},
 }
 
 

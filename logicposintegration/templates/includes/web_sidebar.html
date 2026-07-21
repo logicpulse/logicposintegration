@@ -20,6 +20,7 @@
     '/appointment': 'fa-regular fa-calendar',
     '/me': 'fa-regular fa-user',
     '/shipments': 'fa-solid fa-truck-fast',
+    '/artigos': 'fa-solid fa-boxes-stacked',
   } -%}
   {%- set normalized = route if route.startswith('/') else '/' + route -%}
   {%- set icon = icons.get(normalized, 'fa-solid fa-angle-right') -%}

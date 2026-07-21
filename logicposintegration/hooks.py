@@ -36,6 +36,7 @@ web_include_css = [
 	"/assets/logicposintegration/css/portal_home.css",
 	"/assets/logicposintegration/css/portal_list.css",
 	"/assets/logicposintegration/css/portal_order.css",
+	"/assets/logicposintegration/css/artigos.css",
 ]
 # web_include_js = "/assets/logicposintegration/js/logicposintegration.js"
 
@@ -82,6 +83,16 @@ website_context = {
 		'Desenvolvido por <a href="https://logicpulse.com" target="_blank" class="text-muted">Logicpulse</a>'
 	),
 }
+
+# Portal sidebar — sempre presente (não depende só de Portal Settings na BD)
+portal_menu_items = [
+	{
+		"title": "Artigos",
+		"route": "/artigos",
+		"role": "Customer",
+		"reference_doctype": "",
+	},
+]
 
 # Generators
 # ----------
