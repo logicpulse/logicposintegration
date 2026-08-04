@@ -196,6 +196,8 @@ class TestPartnerArticles(FrappeTestCase):
 		self.assertEqual(result["price_list"], "PVP-PT")
 		row = next(i for i in result["items"] if i["item_code"] == "_Test Partner Article")
 		self.assertEqual(float(row["price_list_rate"]), 10.0)
+		self.assertTrue(row.get("currency_symbol"))
+		self.assertNotEqual(row["currency_symbol"], "")
 
 	def test_request_partner_quote_rejects_guest_price_tampering(self):
 		from logicposintegration.logicpos_integration.partner_articles import (

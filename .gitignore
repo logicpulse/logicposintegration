@@ -54,3 +54,4 @@ jspm_packages/
 # Aider AI Chat
 .aider*
 logicposintegration/logicpos_integration/proposals/assets/**/*.md
+docs/superpowers/plans/*.md

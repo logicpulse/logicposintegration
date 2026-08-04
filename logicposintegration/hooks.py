@@ -25,7 +25,7 @@ app_license = "mit"
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/logicposintegration/css/logicposintegration.css"
+app_include_css = "/assets/logicposintegration/css/desk_gantt.css"
 app_include_js = "/assets/logicposintegration/js/pos_stock_grid.js"
 
 # include js, css files in header of web template
@@ -56,7 +56,9 @@ doctype_js = {
 	"User": "public/js/user.js",
 	"Purchase Order": "public/js/purchase_order.js",
 }
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
+doctype_list_js = {
+	"Task": "public/js/task_list.js",
+}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 doctype_calendar_js = {
 	"Task": "public/js/task_calendar.js",

@@ -53,6 +53,12 @@ def resolve_partner_price_list(customer: str) -> str:
 	frappe.throw(_("Lista de preços {0} não existe.").format(price_list))
 
 
+def _currency_symbol(currency: str) -> str:
+	if not currency:
+		return ""
+	return frappe.db.get_value("Currency", currency, "symbol") or currency
+
+
 def assert_partner_access():
 	if frappe.session.user == "Guest":
 		frappe.throw(_("É necessário iniciar sessão."), frappe.PermissionError)
@@ -126,6 +132,7 @@ def get_partner_articles(search=None, page=1, page_size=24):
 	items = _list_active_partner_prices(price_list, search, offset, page_size)
 	for row in items:
 		row["price_list_rate"] = flt(row["price_list_rate"])
+		row["currency_symbol"] = _currency_symbol(row.get("currency"))
 	return {
 		"items": items,
 		"total": _count_active_partner_prices(price_list, search),

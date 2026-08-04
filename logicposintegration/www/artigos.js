@@ -37,11 +37,20 @@ frappe.ready(function () {
 		renderCart();
 	}
 
-	function formatMoney(amount, currency) {
-		if (typeof format_currency === "function") {
-			return format_currency(amount, currency || "EUR");
+	function formatMoney(amount, currency, symbol) {
+		const code = currency || "EUR";
+		let display = symbol || null;
+		if (!display && typeof get_currency_symbol === "function") {
+			const fromFrappe = get_currency_symbol(code);
+			if (fromFrappe && fromFrappe !== code) {
+				display = fromFrappe;
+			}
 		}
-		return (currency || "EUR") + " " + Number(amount || 0).toFixed(2);
+		display = display || code;
+		if (typeof format_number === "function") {
+			return display + " " + format_number(amount, null, 2);
+		}
+		return display + " " + Number(amount || 0).toFixed(2);
 	}
 
 	function escapeHtml(value) {
@@ -101,7 +110,7 @@ frappe.ready(function () {
 				<div class="partner-artigos-card-body">
 					<p class="partner-artigos-card-code">${escapeHtml(item.item_code)}</p>
 					<h3 class="partner-artigos-card-name">${escapeHtml(item.item_name || "")}</h3>
-					<p class="partner-artigos-card-price">${formatMoney(item.price_list_rate, item.currency)}</p>
+					<p class="partner-artigos-card-price">${formatMoney(item.price_list_rate, item.currency, item.currency_symbol)}</p>
 					<button type="button" class="btn btn-sm btn-secondary btn-block">${__("Adicionar")}</button>
 				</div>`;
 			card.querySelector("button").addEventListener("click", function () {
@@ -153,6 +162,7 @@ frappe.ready(function () {
 				qty: 1,
 				price_list_rate: item.price_list_rate,
 				currency: item.currency,
+				currency_symbol: item.currency_symbol,
 			});
 		}
 		saveCart(cart);
@@ -169,8 +179,10 @@ frappe.ready(function () {
 		els.cartList.innerHTML = "";
 		let total = 0;
 		let currency = "EUR";
+		let currencySymbol = null;
 		cart.forEach(function (line) {
 			currency = line.currency || currency;
+			currencySymbol = line.currency_symbol || currencySymbol;
 			total += (line.price_list_rate || 0) * (line.qty || 0);
 			const li = document.createElement("li");
 			li.innerHTML = `
@@ -184,7 +196,7 @@ frappe.ready(function () {
 						<button type="button" class="btn btn-xs btn-link text-danger" data-act="rm">${__("Remover")}</button>
 					</div>
 				</div>
-				<div>${formatMoney((line.price_list_rate || 0) * line.qty, currency)}</div>`;
+				<div>${formatMoney((line.price_list_rate || 0) * line.qty, currency, line.currency_symbol)}</div>`;
 			li.querySelector('[data-act="dec"]').onclick = function () {
 				updateQty(line.item_code, -1);
 			};
@@ -196,7 +208,9 @@ frappe.ready(function () {
 			};
 			els.cartList.appendChild(li);
 		});
-		els.cartTotal.textContent = count ? formatMoney(total, currency) : "—";
+		els.cartTotal.textContent = count
+			? formatMoney(total, currency, currencySymbol)
+			: "—";
 	}
 
 	function updateQty(item_code, delta) {
