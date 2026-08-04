@@ -82,7 +82,7 @@ FEATURE_CARD_META = {
 	"/artigos": {
 		"icon": "fa-solid fa-boxes-stacked",
 		"icon_color": "#0d9488",
-		"description": "Consulte o catálogo e preços PVR-PT e peça orçamento.",
+		"description": "Consulte o catálogo e preços da lista de venda e peça orçamento.",
 	},
 }
 

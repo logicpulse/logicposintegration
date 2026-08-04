@@ -12,6 +12,6 @@ def get_context(context):
 	context.parents = [{"name": _("Home"), "route": "/portal"}]
 	context.metatags = {
 		"title": _("Artigos"),
-		"description": _("Catálogo de artigos com preços PVR-PT"),
+		"description": _("Catálogo de artigos com preços da lista de venda"),
 	}
 	return context

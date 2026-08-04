@@ -19,6 +19,7 @@ frappe.ready(function () {
 		cartTotal: document.getElementById("artigos-cart-total"),
 		notes: document.getElementById("artigos-notes"),
 		requestBtn: document.getElementById("artigos-request-quote"),
+		priceListLabel: document.getElementById("artigos-price-list-label"),
 	};
 
 	let state = { page: 1, pageSize: 20, total: 0, search: "", loading: false };
@@ -68,6 +69,11 @@ frappe.ready(function () {
 				state.loading = false;
 				const data = (r && r.message) || {};
 				state.total = data.total || 0;
+				if (els.priceListLabel && data.price_list) {
+					els.priceListLabel.textContent = __("Preços da lista {0}", [
+						data.price_list,
+					]);
+				}
 				renderGrid(data.items || []);
 				renderPagination();
 			},
