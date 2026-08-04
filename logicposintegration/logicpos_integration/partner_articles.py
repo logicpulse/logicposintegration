@@ -5,7 +5,6 @@ from frappe import _
 from frappe.utils import cint, escape_html, flt, fmt_money
 
 PARTNER_QUOTE_FALLBACK_EMAIL = "hailes.mauricio@logicpulse.com"  # email comercial se account_manager vazio
-PARTNER_PRICE_LIST = "PVR-PT"  # legado; removido na task de wiring do catálogo
 
 CURRENCY_TO_PRICE_LIST_SUFFIX = {
 	"AOA": "-AO",
@@ -62,9 +61,9 @@ def assert_partner_access():
 		frappe.throw(_("Sem permissão para aceder aos artigos."), frappe.PermissionError)
 
 
-def _count_active_partner_prices(search=None):
+def _count_active_partner_prices(price_list, search=None):
 	conditions = ["ip.price_list = %(price_list)s", "IFNULL(i.disabled, 0) = 0"]
-	values = {"price_list": PARTNER_PRICE_LIST}
+	values = {"price_list": price_list}
 	if search:
 		conditions.append(
 			"(ip.item_code LIKE %(q)s OR ip.item_name LIKE %(q)s OR i.item_name LIKE %(q)s)"
@@ -82,10 +81,10 @@ def _count_active_partner_prices(search=None):
 	)[0][0]
 
 
-def _list_active_partner_prices(search, offset, page_size):
+def _list_active_partner_prices(price_list, search, offset, page_size):
 	conditions = ["ip.price_list = %(price_list)s", "IFNULL(i.disabled, 0) = 0"]
 	values = {
-		"price_list": PARTNER_PRICE_LIST,
+		"price_list": price_list,
 		"limit": page_size,
 		"offset": offset,
 	}
@@ -118,18 +117,21 @@ def _list_active_partner_prices(search, offset, page_size):
 @frappe.whitelist()
 def get_partner_articles(search=None, page=1, page_size=24):
 	assert_partner_access()
+	customer = get_partner_customer()
+	price_list = resolve_partner_price_list(customer)
 	page = max(cint(page), 1)
 	page_size = min(max(cint(page_size), 1), 48)
 	offset = (page - 1) * page_size
 	search = (search or "").strip() or None
-	items = _list_active_partner_prices(search, offset, page_size)
+	items = _list_active_partner_prices(price_list, search, offset, page_size)
 	for row in items:
 		row["price_list_rate"] = flt(row["price_list_rate"])
 	return {
 		"items": items,
-		"total": _count_active_partner_prices(search),
+		"total": _count_active_partner_prices(price_list, search),
 		"page": page,
 		"page_size": page_size,
+		"price_list": price_list,
 	}
 
 
@@ -159,7 +161,7 @@ def resolve_quote_recipient(customer: str) -> str:
 	return email
 
 
-def _load_server_lines(items):
+def _load_server_lines(items, price_list):
 	if isinstance(items, str):
 		items = json.loads(items)
 	if not items:
@@ -175,7 +177,7 @@ def _load_server_lines(items):
 			continue
 		price = frappe.db.get_value(
 			"Item Price",
-			{"item_code": item_code, "price_list": PARTNER_PRICE_LIST},
+			{"item_code": item_code, "price_list": price_list},
 			["price_list_rate", "currency", "uom", "item_name"],
 			as_dict=True,
 		)
@@ -199,14 +201,16 @@ def _load_server_lines(items):
 
 	if invalid:
 		frappe.throw(
-			_("Itens sem preço PVR-PT ou inválidos: {0}").format(", ".join(invalid))
+			_("Itens sem preço {0} ou inválidos: {1}").format(
+				price_list, ", ".join(invalid)
+			)
 		)
 	if not lines:
 		frappe.throw(_("Nenhuma linha válida no pedido."))
 	return lines
 
 
-def _build_quote_email_html(customer, lines, notes, requester):
+def _build_quote_email_html(customer, lines, notes, requester, price_list):
 	currency = lines[0]["currency"]
 	rows = "".join(
 		f"<tr><td>{escape_html(l['item_code'])}</td>"
@@ -227,7 +231,7 @@ def _build_quote_email_html(customer, lines, notes, requester):
 	</tr></thead>
 	<tbody>{rows}</tbody>
 	</table>
-	<p><strong>Total estimado ({escape_html(PARTNER_PRICE_LIST)}):</strong>
+	<p><strong>Total estimado ({escape_html(price_list)}):</strong>
 	{fmt_money(total, currency=currency)}</p>
 	<p><strong>Notas:</strong> {notes_html}</p>
 	"""
@@ -237,10 +241,11 @@ def _build_quote_email_html(customer, lines, notes, requester):
 def request_partner_quote(items, notes=None):
 	assert_partner_access()
 	customer = get_partner_customer()
-	lines = _load_server_lines(items)
+	price_list = resolve_partner_price_list(customer)
+	lines = _load_server_lines(items, price_list)
 	recipient = resolve_quote_recipient(customer)
 	requester = frappe.utils.get_fullname(frappe.session.user)
-	html = _build_quote_email_html(customer, lines, notes, requester)
+	html = _build_quote_email_html(customer, lines, notes, requester, price_list)
 
 	cc = []
 	user_email = frappe.db.get_value("User", frappe.session.user, "email")

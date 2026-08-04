@@ -177,17 +177,25 @@ class TestPartnerArticles(FrappeTestCase):
 		with self.assertRaises(frappe.ValidationError):
 			resolve_partner_price_list("_Test Partner Customer")
 
-	def test_get_partner_articles_returns_pvr_pt_only(self):
+	def test_get_partner_articles_uses_resolved_price_list(self):
 		from logicposintegration.logicpos_integration.partner_articles import (
 			get_partner_articles,
 		)
 
+		self._ensure_partner_user()
+		self._ensure_price_list("PVP-PT", "EUR")
+		self._ensure_item_price("_Test Partner Article", "PVP-PT", 10.0, "EUR")
+		frappe.db.set_value(
+			"Customer",
+			"_Test Partner Customer",
+			{"customer_type": "Company", "default_currency": "EUR"},
+		)
+		frappe.set_user(self.partner_user)
+
 		result = get_partner_articles(search="_Test Partner Article", page=1, page_size=24)
-		codes = [i["item_code"] for i in result["items"]]
-		self.assertIn("_Test Partner Article", codes)
+		self.assertEqual(result["price_list"], "PVP-PT")
 		row = next(i for i in result["items"] if i["item_code"] == "_Test Partner Article")
-		self.assertEqual(float(row["price_list_rate"]), 12.5)
-		self.assertEqual(result["page"], 1)
+		self.assertEqual(float(row["price_list_rate"]), 10.0)
 
 	def test_request_partner_quote_rejects_guest_price_tampering(self):
 		from logicposintegration.logicpos_integration.partner_articles import (
@@ -195,6 +203,13 @@ class TestPartnerArticles(FrappeTestCase):
 		)
 
 		self._ensure_partner_user()
+		self._ensure_price_list("PVP-PT", "EUR")
+		self._ensure_item_price("_Test Partner Article", "PVP-PT", 10.0, "EUR")
+		frappe.db.set_value(
+			"Customer",
+			"_Test Partner Customer",
+			{"customer_type": "Company", "default_currency": "EUR"},
+		)
 		frappe.set_user(self.partner_user)
 
 		with patch(
@@ -212,6 +227,7 @@ class TestPartnerArticles(FrappeTestCase):
 			self.assertIn("_Test Partner Article", html)
 			self.assertNotIn("0.01", html)
 			self.assertIn("Pedido teste", html)
+			self.assertIn("PVP-PT", html)
 
 	def test_request_partner_quote_fails_without_recipient(self):
 		import logicposintegration.logicpos_integration.partner_articles as mod
@@ -220,6 +236,13 @@ class TestPartnerArticles(FrappeTestCase):
 		)
 
 		self._ensure_partner_user(account_manager=None)
+		self._ensure_price_list("PVP-PT", "EUR")
+		self._ensure_item_price("_Test Partner Article", "PVP-PT", 10.0, "EUR")
+		frappe.db.set_value(
+			"Customer",
+			"_Test Partner Customer",
+			{"customer_type": "Company", "default_currency": "EUR"},
+		)
 		frappe.set_user(self.partner_user)
 		original = mod.PARTNER_QUOTE_FALLBACK_EMAIL
 		mod.PARTNER_QUOTE_FALLBACK_EMAIL = ""
