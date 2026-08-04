@@ -4,8 +4,54 @@ import frappe
 from frappe import _
 from frappe.utils import cint, escape_html, flt, fmt_money
 
-PARTNER_PRICE_LIST = "PVR-PT"
 PARTNER_QUOTE_FALLBACK_EMAIL = "hailes.mauricio@logicpulse.com"  # email comercial se account_manager vazio
+PARTNER_PRICE_LIST = "PVR-PT"  # legado; removido na task de wiring do catálogo
+
+CURRENCY_TO_PRICE_LIST_SUFFIX = {
+	"AOA": "-AO",
+	"EUR": "-PT",
+	"MZN": "-MZ",
+}
+
+
+def resolve_partner_price_list(customer: str) -> str:
+	"""PVP/PVR × sufixo de moeda; PVR em falta → fallback PVP mesma moeda."""
+	row = frappe.db.get_value(
+		"Customer",
+		customer,
+		["customer_type", "default_currency"],
+		as_dict=True,
+	)
+	if not row:
+		frappe.throw(_("Cliente inválido."))
+
+	currency = (row.default_currency or "").strip().upper()
+	suffix = CURRENCY_TO_PRICE_LIST_SUFFIX.get(currency)
+	if not suffix:
+		frappe.throw(
+			_(
+				"Moeda base do cliente não configurada ou não suportada ({0}). "
+				"Use AOA, EUR ou MZN."
+			).format(currency or _("vazio"))
+		)
+
+	prefix = "PVR" if row.customer_type == "Partnership" else "PVP"
+	price_list = f"{prefix}{suffix}"
+
+	if frappe.db.exists("Price List", price_list):
+		return price_list
+
+	if prefix == "PVR":
+		fallback = f"PVP{suffix}"
+		if frappe.db.exists("Price List", fallback):
+			return fallback
+		frappe.throw(
+			_("Lista de preços {0} (nem fallback {1}) não existe.").format(
+				price_list, fallback
+			)
+		)
+
+	frappe.throw(_("Lista de preços {0} não existe.").format(price_list))
 
 
 def assert_partner_access():
@@ -206,6 +252,6 @@ def request_partner_quote(items, notes=None):
 		cc=cc or None,
 		subject=_("Pedido de orçamento — {0}").format(customer),
 		message=html,
-		now=True,
+		now=False,
 	)
 	return {"ok": True, "sent_to": recipient}

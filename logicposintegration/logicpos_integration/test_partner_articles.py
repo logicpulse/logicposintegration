@@ -43,6 +43,32 @@ class TestPartnerArticles(FrappeTestCase):
 				}
 			).insert(ignore_permissions=True)
 
+	def _ensure_price_list(self, name, currency):
+		if not frappe.db.exists("Price List", name):
+			frappe.get_doc(
+				{
+					"doctype": "Price List",
+					"price_list_name": name,
+					"selling": 1,
+					"currency": currency,
+					"enabled": 1,
+				}
+			).insert(ignore_permissions=True)
+
+	def _ensure_item_price(self, item_code, price_list, rate, currency):
+		if not frappe.db.exists(
+			"Item Price", {"item_code": item_code, "price_list": price_list}
+		):
+			frappe.get_doc(
+				{
+					"doctype": "Item Price",
+					"item_code": item_code,
+					"price_list": price_list,
+					"price_list_rate": rate,
+					"currency": currency,
+				}
+			).insert(ignore_permissions=True)
+
 	def _ensure_partner_user(self, account_manager="Administrator"):
 		email = "partner_articles_test@example.com"
 		self.partner_user = email
@@ -87,6 +113,70 @@ class TestPartnerArticles(FrappeTestCase):
 			cust.flags.ignore_mandatory = True
 			cust.save(ignore_permissions=True)
 
+	def test_resolve_company_eur_uses_pvp_pt(self):
+		from logicposintegration.logicpos_integration.partner_articles import (
+			resolve_partner_price_list,
+		)
+
+		self._ensure_partner_user()
+		self._ensure_price_list("PVP-PT", "EUR")
+		frappe.db.set_value(
+			"Customer",
+			"_Test Partner Customer",
+			{"customer_type": "Company", "default_currency": "EUR"},
+		)
+		self.assertEqual(
+			resolve_partner_price_list("_Test Partner Customer"), "PVP-PT"
+		)
+
+	def test_resolve_partnership_eur_uses_pvr_pt(self):
+		from logicposintegration.logicpos_integration.partner_articles import (
+			resolve_partner_price_list,
+		)
+
+		self._ensure_partner_user()
+		self._ensure_price_list("PVR-PT", "EUR")
+		frappe.db.set_value(
+			"Customer",
+			"_Test Partner Customer",
+			{"customer_type": "Partnership", "default_currency": "EUR"},
+		)
+		self.assertEqual(
+			resolve_partner_price_list("_Test Partner Customer"), "PVR-PT"
+		)
+
+	def test_resolve_partnership_aoa_falls_back_to_pvp_ao(self):
+		from logicposintegration.logicpos_integration.partner_articles import (
+			resolve_partner_price_list,
+		)
+
+		self._ensure_partner_user()
+		self._ensure_price_list("PVP-AO", "AOA")
+		if frappe.db.exists("Price List", "PVR-AO"):
+			frappe.delete_doc("Price List", "PVR-AO", force=1)
+		frappe.db.set_value(
+			"Customer",
+			"_Test Partner Customer",
+			{"customer_type": "Partnership", "default_currency": "AOA"},
+		)
+		self.assertEqual(
+			resolve_partner_price_list("_Test Partner Customer"), "PVP-AO"
+		)
+
+	def test_resolve_invalid_currency_throws(self):
+		from logicposintegration.logicpos_integration.partner_articles import (
+			resolve_partner_price_list,
+		)
+
+		self._ensure_partner_user()
+		frappe.db.set_value(
+			"Customer",
+			"_Test Partner Customer",
+			{"customer_type": "Company", "default_currency": "USD"},
+		)
+		with self.assertRaises(frappe.ValidationError):
+			resolve_partner_price_list("_Test Partner Customer")
+
 	def test_get_partner_articles_returns_pvr_pt_only(self):
 		from logicposintegration.logicpos_integration.partner_articles import (
 			get_partner_articles,
@@ -117,6 +207,7 @@ class TestPartnerArticles(FrappeTestCase):
 			self.assertTrue(result["ok"])
 			self.assertTrue(sendmail.called)
 			_args, kwargs = sendmail.call_args
+			self.assertFalse(kwargs["now"])
 			html = kwargs.get("message") or ""
 			self.assertIn("_Test Partner Article", html)
 			self.assertNotIn("0.01", html)
