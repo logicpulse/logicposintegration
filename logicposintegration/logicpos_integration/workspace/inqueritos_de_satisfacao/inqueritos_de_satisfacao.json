@@ -1,0 +1,87 @@
+{
+ "app": "logicposintegration",
+ "charts": [],
+ "content": "[{\"id\":\"sat_hdr\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Inqu\\u00e9ritos de Satisfa\\u00e7\\u00e3o</b></span>\",\"col\":12}},{\"id\":\"sat_card\",\"type\":\"card\",\"data\":{\"card_name\":\"Inqu\\u00e9ritos\",\"col\":4}},{\"id\":\"sat_card_cfg\",\"type\":\"card\",\"data\":{\"card_name\":\"Configura\\u00e7\\u00e3o\",\"col\":4}}]",
+ "creation": "2026-08-10 18:40:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "review",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Inquéritos de Satisfação",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Inquéritos",
+   "link_count": 1,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Inquérito de Satisfação",
+   "link_count": 0,
+   "link_to": "Satisfaction Survey",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Configuração",
+   "link_count": 1,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Modelo de Inquérito de Satisfação",
+   "link_count": 0,
+   "link_to": "Satisfaction Survey Template",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-08-10 18:40:00.000000",
+ "modified_by": "Administrator",
+ "module": "LogicPOS Integration",
+ "name": "Inquéritos de Satisfação",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "Projects",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [],
+ "sequence_id": 12.0,
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Inquéritos",
+   "link_to": "Satisfaction Survey",
+   "stats_filter": "",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Modelos",
+   "link_to": "Satisfaction Survey Template",
+   "stats_filter": "",
+   "type": "DocType"
+  }
+ ],
+ "title": "Inquéritos de Satisfação",
+ "type": "Workspace"
+}

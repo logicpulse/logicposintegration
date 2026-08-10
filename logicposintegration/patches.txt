@@ -7,3 +7,4 @@ logicposintegration.patches.v1_0.remove_projects_portal_redirect
 logicposintegration.patches.v1_0.add_artigos_portal_menu
 logicposintegration.patches.v1_0.add_satisfacao_portal_menu
 logicposintegration.patches.v1_0.seed_default_satisfaction_survey_template
+logicposintegration.patches.v1_0.add_satisfacao_workspace
