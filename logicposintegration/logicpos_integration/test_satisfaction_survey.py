@@ -10,10 +10,30 @@ class TestSatisfactionSurveyAPI(FrappeTestCase):
 	def setUp(self) -> None:
 		frappe.set_user("Administrator")
 		self._cleanup()
+		# Isolate from seeded/production templates during unit tests
+		frappe.db.sql(
+			"""
+			update `tabSatisfaction Survey Template`
+			set is_active = 0, is_default = 0
+			where title not like '_Test Sat%%'
+			"""
+		)
 
 	def tearDown(self) -> None:
 		frappe.set_user("Administrator")
 		self._cleanup()
+		# Restore seeded default template if present
+		name = frappe.db.get_value(
+			"Satisfaction Survey Template",
+			{"title": "Inquérito de Satisfação (Default)"},
+			"name",
+		)
+		if name:
+			frappe.db.set_value(
+				"Satisfaction Survey Template",
+				name,
+				{"is_active": 1, "is_default": 1},
+			)
 
 	def _cleanup(self) -> None:
 		for name in frappe.get_all(
