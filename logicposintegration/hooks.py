@@ -26,7 +26,10 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/logicposintegration/css/desk_gantt.css"
-app_include_js = "/assets/logicposintegration/js/pos_stock_grid.js"
+app_include_js = [
+	"/assets/logicposintegration/js/pos_stock_grid.js",
+	"/assets/logicposintegration/js/satisfaction_survey_dialog.js",
+]
 
 # include js, css files in header of web template
 web_include_css = [
@@ -37,6 +40,7 @@ web_include_css = [
 	"/assets/logicposintegration/css/portal_list.css",
 	"/assets/logicposintegration/css/portal_order.css",
 	"/assets/logicposintegration/css/artigos.css",
+	"/assets/logicposintegration/css/satisfacao.css",
 ]
 # web_include_js = "/assets/logicposintegration/js/logicposintegration.js"
 
@@ -55,6 +59,8 @@ doctype_js = {
 	"Quotation": "public/js/quotation.js",
 	"User": "public/js/user.js",
 	"Purchase Order": "public/js/purchase_order.js",
+	"Project": "public/js/project.js",
+	"Task": "public/js/task.js",
 }
 doctype_list_js = {
 	"Task": "public/js/task_list.js",
@@ -94,6 +100,16 @@ portal_menu_items = [
 		"role": "Customer",
 		"reference_doctype": "",
 	},
+	{
+		"title": "Inquéritos",
+		"route": "/satisfacao",
+		"role": "Customer",
+		"reference_doctype": "",
+	},
+]
+
+website_route_rules = [
+	{"from_route": "/satisfacao/<path:token>", "to_route": "satisfacao_form"},
 ]
 
 # Generators

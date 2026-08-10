@@ -1,0 +1,32 @@
+{% extends "templates/web.html" %}
+
+{% block head_include %}
+<link rel="stylesheet" href="/assets/logicposintegration/css/satisfacao.css">
+{% endblock %}
+
+{% block page_content %}
+<div class="sat-portal">
+	<header class="sat-portal-header">
+		<h1 class="sat-portal-title">{{ _("Inquéritos de Satisfação") }}</h1>
+		<p class="sat-portal-sub">{{ _("Consulte e preencha os inquéritos associados à sua conta.") }}</p>
+	</header>
+
+	{% if surveys %}
+	<ul class="sat-portal-list">
+		{% for s in surveys %}
+		<li class="sat-portal-item">
+			<a class="sat-portal-link" href="/satisfacao/{{ s.access_token }}">
+				<span class="sat-portal-item-title">{{ s.context_label or s.name }}</span>
+				<span class="sat-portal-item-meta">
+					<span class="sat-status sat-status-{{ s.status|lower }}">{{ _(s.status) }}</span>
+					{% if s.sent_on %}<span>{{ frappe.format(s.sent_on, {"fieldtype": "Datetime"}) }}</span>{% endif %}
+				</span>
+			</a>
+		</li>
+		{% endfor %}
+	</ul>
+	{% else %}
+	<p class="sat-portal-empty">{{ _("Não há inquéritos disponíveis.") }}</p>
+	{% endif %}
+</div>
+{% endblock %}

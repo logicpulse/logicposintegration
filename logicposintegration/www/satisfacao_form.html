@@ -1,0 +1,76 @@
+{% extends "templates/web.html" %}
+
+{% block head_include %}
+<link rel="stylesheet" href="/assets/logicposintegration/css/satisfacao.css">
+{% endblock %}
+
+{% block page_content %}
+<div class="sat-form-page">
+	{% if error %}
+	<div class="sat-form-message sat-form-error">
+		<h1>{{ _("Inquérito indisponível") }}</h1>
+		<p>{{ error }}</p>
+		{% if frappe.session.user != "Guest" %}
+		<p><a href="/satisfacao">{{ _("Voltar à lista") }}</a></p>
+		{% endif %}
+	</div>
+	{% elif survey and survey.already_submitted %}
+	<div class="sat-form-message sat-form-done">
+		<h1>{{ _("Obrigado") }}</h1>
+		<p>{{ _("Este inquérito já foi submetido.") }}</p>
+		<p class="sat-form-context">{{ survey.context_label }}</p>
+		{% if frappe.session.user != "Guest" %}
+		<p><a href="/satisfacao">{{ _("Voltar à lista") }}</a></p>
+		{% endif %}
+	</div>
+	{% elif survey %}
+	<div
+		class="sat-form"
+		id="sat-form"
+		data-token="{{ survey.access_token }}"
+		data-api="logicposintegration.logicpos_integration.satisfaction_survey.submit_satisfaction_survey"
+	>
+		<header class="sat-form-header">
+			<h1>{{ _("Inquérito de Satisfação") }}</h1>
+			<p class="sat-form-context">{{ survey.context_label }}</p>
+		</header>
+
+		{% for q in survey.questions %}
+		<section class="sat-question" data-idx="{{ q.idx }}" data-type="{{ q.question_type }}">
+			<h2 class="sat-question-title">{{ loop.index }}. {{ q.question }}</h2>
+
+			{% if q.question_type == "Choice" %}
+			<div class="sat-pills" role="group" aria-label="{{ q.question }}">
+				{% for opt in q.options %}
+				<button type="button" class="sat-pill" data-value="{{ opt }}">{{ opt }}</button>
+				{% endfor %}
+			</div>
+			{% elif q.question_type == "Scale" %}
+			<div class="sat-scale" role="group" aria-label="{{ q.question }}">
+				{% for n in range(q.scale_min, q.scale_max + 1) %}
+				<button type="button" class="sat-scale-btn" data-value="{{ n }}">{{ n }}</button>
+				{% endfor %}
+			</div>
+			{% else %}
+			<textarea class="sat-text form-control" rows="3" placeholder="{{ _('Escreva aqui…') }}"></textarea>
+			{% endif %}
+		</section>
+		{% endfor %}
+
+		<footer class="sat-form-footer">
+			<button type="button" class="sat-submit" id="sat-submit">{{ _("Enviar") }}</button>
+			<p class="sat-form-hint" id="sat-hint" hidden></p>
+		</footer>
+	</div>
+
+	<div class="sat-form-message sat-form-done" id="sat-thanks" hidden>
+		<h1>{{ _("Obrigado") }}</h1>
+		<p>{{ _("O seu inquérito foi submetido com sucesso.") }}</p>
+		{% if frappe.session.user != "Guest" %}
+		<p><a href="/satisfacao">{{ _("Voltar à lista") }}</a></p>
+		{% endif %}
+	</div>
+	{% endif %}
+</div>
+{% endblock %}
+
