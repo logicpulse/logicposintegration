@@ -12,4 +12,24 @@ frappe.ui.form.on("Project", {
 			frappe.logicpos.offer_satisfaction_survey("Project", frm.doc.name);
 		}
 	},
+	// ERPNext "Actions → Set Project Status" chama frm.events.set_status (não after_save).
+	// Substituímos o handler para oferecer o inquérito após concluir.
+	set_status(frm, status) {
+		frappe.confirm(
+			__("Set Project and all Tasks to status {0}?", [__(status).bold()]),
+			() => {
+				frappe
+					.xcall("erpnext.projects.doctype.project.project.set_project_status", {
+						project: frm.doc.name,
+						status: status,
+					})
+					.then(() => frm.reload_doc())
+					.then(() => {
+						if (status === "Completed") {
+							frappe.logicpos.offer_satisfaction_survey("Project", frm.doc.name);
+						}
+					});
+			}
+		);
+	},
 });
