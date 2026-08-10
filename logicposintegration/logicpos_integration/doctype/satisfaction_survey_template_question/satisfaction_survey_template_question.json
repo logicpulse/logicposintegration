@@ -1,0 +1,72 @@
+{
+ "actions": [],
+ "creation": "2026-08-10 14:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "question",
+  "question_type",
+  "scale_min",
+  "scale_max",
+  "options",
+  "is_mandatory"
+ ],
+ "fields": [
+  {
+   "fieldname": "question",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Question",
+   "reqd": 1
+  },
+  {
+   "default": "Scale",
+   "fieldname": "question_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "Scale\nText\nChoice",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.question_type=='Scale'",
+   "fieldname": "scale_min",
+   "fieldtype": "Int",
+   "label": "Scale Min"
+  },
+  {
+   "default": "10",
+   "depends_on": "eval:doc.question_type=='Scale'",
+   "fieldname": "scale_max",
+   "fieldtype": "Int",
+   "label": "Scale Max"
+  },
+  {
+   "depends_on": "eval:doc.question_type=='Choice'",
+   "description": "One option per line",
+   "fieldname": "options",
+   "fieldtype": "Text",
+   "label": "Options"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_mandatory",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Mandatory"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-10 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "LogicPOS Integration",
+ "name": "Satisfaction Survey Template Question",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "idx",
+ "sort_order": "ASC",
+ "states": []
+}
