@@ -1,0 +1,24 @@
+{% set email_header_label = "Inquérito de Satisfação" %}
+{% set email_header_subtitle = context_label %}
+{% include "templates/emails/includes/email_company_header.html" %}
+
+<p style="margin: 24px 0 16px;">
+	Para melhorar continuamente os seus serviços, a Logicpulse realiza inquéritos de
+	satisfação a todos os seus clientes e parceiros.
+</p>
+
+<p style="margin: 0 0 24px;">
+	Pedimos que preencha o inquérito de satisfação relativo a
+	<strong>{{ context_label }}</strong>.
+</p>
+
+<div style="text-align: center; margin: 32px 0;">
+	<a href="{{ link }}"
+	   style="display: inline-block; padding: 14px 40px; background: #0AABE6; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; border-radius: 4px;">
+		Abrir inquérito
+	</a>
+</div>
+
+<p style="margin: 0 0 8px;">Obrigado.</p>
+
+{% include "templates/emails/includes/email_footer_disclaimer.html" %}

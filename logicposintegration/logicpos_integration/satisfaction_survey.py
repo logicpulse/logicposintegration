@@ -236,20 +236,17 @@ def _snapshot_answers_from_template(template_name: str) -> list[dict[str, Any]]:
 def _send_survey_email(survey) -> None:
 	link = get_url(f"/satisfacao/{survey.access_token}")
 	subject = _("Inquérito de satisfação — {0}").format(survey.context_label)
-	message = _(
-		"<p>Olá,</p>"
-		"<p>Pedimos que preencha o inquérito de satisfação relativo a "
-		"<strong>{0}</strong>.</p>"
-		'<p><a href="{1}">Abrir inquérito</a></p>'
-		"<p>Obrigado.</p>"
-	).format(frappe.utils.escape_html(survey.context_label or ""), link)
 	frappe.sendmail(
 		recipients=[survey.recipient_email],
 		subject=subject,
-		message=message,
+		template="satisfaction_survey",
+		args={
+			"context_label": survey.context_label or "",
+			"link": link,
+		},
 		reference_doctype=survey.doctype,
 		reference_name=survey.name,
-		now=True,
+		now=False
 	)
 
 
