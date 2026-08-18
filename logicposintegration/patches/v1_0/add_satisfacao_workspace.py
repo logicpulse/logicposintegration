@@ -31,6 +31,10 @@ def execute() -> None:
 				"roles",
 				"doctype",
 				"name",
+				"modified",
+				"modified_by",
+				"creation",
+				"owner",
 			):
 				continue
 			doc.set(key, value)

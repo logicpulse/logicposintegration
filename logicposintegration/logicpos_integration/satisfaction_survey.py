@@ -293,6 +293,7 @@ def create_and_send_satisfaction_survey(
 			"answers": answer_rows,
 		}
 	)
+	doc.flags.allow_survey_write = True
 	doc.insert(ignore_permissions=True)
 	_send_survey_email(doc)
 	return doc.name
@@ -490,5 +491,6 @@ def submit_satisfaction_survey(token: str, answers: list | str) -> str:
 	survey.submitted_on = now_datetime()
 	if frappe.session.user and frappe.session.user != "Guest":
 		survey.submitted_by = frappe.session.user
+	survey.flags.allow_survey_write = True
 	survey.save(ignore_permissions=True)
 	return survey.name

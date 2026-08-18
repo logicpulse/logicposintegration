@@ -32,6 +32,7 @@
    "fieldtype": "Select",
    "label": "Series",
    "options": "SS-.####",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -42,6 +43,7 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "Draft\nSent\nSubmitted\nCancelled",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -51,6 +53,7 @@
    "in_standard_filter": 1,
    "label": "Survey Template",
    "options": "Satisfaction Survey Template",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -69,21 +72,24 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Customer",
-   "options": "Customer"
+   "options": "Customer",
+   "read_only": 1
   },
   {
    "fieldname": "project",
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Project",
-   "options": "Project"
+   "options": "Project",
+   "read_only": 1
   },
   {
    "fieldname": "task",
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Task",
-   "options": "Task"
+   "options": "Task",
+   "read_only": 1
   },
   {
    "fieldname": "section_recipient",
@@ -94,13 +100,15 @@
    "fieldname": "recipient_email",
    "fieldtype": "Data",
    "label": "Recipient Email",
-   "options": "Email"
+   "options": "Email",
+   "read_only": 1
   },
   {
    "fieldname": "recipient_user",
    "fieldtype": "Link",
    "label": "Recipient User",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "access_token",
@@ -141,18 +149,20 @@
    "fieldname": "answers",
    "fieldtype": "Table",
    "label": "Answers",
-   "options": "Satisfaction Survey Answer"
+   "options": "Satisfaction Survey Answer",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2026-08-10 14:00:00.000000",
+ "modified": "2026-08-18 19:00:00.000000",
  "modified_by": "Administrator",
+ "default_view": "Dashboard",
  "module": "LogicPOS Integration",
  "name": "Satisfaction Survey",
  "owner": "Administrator",
  "permissions": [
   {
-   "create": 1,
+   "create": 0,
    "delete": 1,
    "email": 1,
    "export": 1,
@@ -161,18 +171,19 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
-   "write": 1
+   "write": 0
   },
   {
-   "create": 1,
+   "create": 0,
+   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Projects User",
-   "share": 1,
-   "write": 1
+   "share": 0,
+   "write": 0
   }
  ],
  "sort_field": "modified",

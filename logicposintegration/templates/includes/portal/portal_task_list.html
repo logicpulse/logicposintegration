@@ -1,0 +1,94 @@
+{% if sub_title %}
+<p class="portal-list-subtitle">{{ sub_title }}</p>
+{% endif %}
+
+{% if not result -%}
+<div class="portal-list-empty">
+	<p class="portal-list-empty-title">{{ no_result_message or _("Nothing to show") }}</p>
+</div>
+{% else %}
+<style>
+  .portal-task-list-head,
+  .portal-task-list-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 7.5rem 7.5rem 6.5rem !important;
+    column-gap: 1rem;
+    align-items: center;
+    padding-left: 1.1rem;
+    padding-right: 1.1rem;
+  }
+
+  .portal-task-list-head {
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 0.35rem;
+  }
+
+  .portal-task-list-head span {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    white-space: nowrap;
+  }
+
+  .portal-task-list-row {
+    position: relative;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .portal-task-list-row:hover {
+    background: #f8fafc;
+  }
+
+  .portal-task-list-row-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    opacity: 0;
+    text-indent: -9999px;
+    overflow: hidden;
+  }
+
+  .portal-task-col-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .portal-task-no-project {
+    color: #c2410c !important;
+    font-weight: 500;
+  }
+
+  .portal-task-col-updated {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+</style>
+
+<div class="portal-task-list website-list" data-doctype="{{ doctype }}" data-txt="{{ (txt or '')|e }}">
+	<div class="portal-task-list-head" aria-hidden="true">
+		<span class="portal-task-col-main">{{ _("Task") }}</span>
+		<span class="portal-task-col-status">{{ _("Status") }}</span>
+		<span class="portal-task-col-priority">{{ _("Priority") }}</span>
+		<span class="portal-task-col-updated">{{ _("Updated") }}</span>
+	</div>
+
+	<div class="portal-task-list-body result">
+		{% for item in result %}
+			{{ item }}
+		{% endfor %}
+	</div>
+
+	<div class="portal-list-more more-block {% if not show_more -%} d-none {%- endif %}">
+		<button class="btn btn-light btn-more btn-sm">{{ _("More") }}</button>
+	</div>
+</div>
+{%- endif %}

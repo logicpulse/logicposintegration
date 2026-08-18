@@ -1,0 +1,243 @@
+{# Satisfaction Survey Print Format — cabeçalho no estilo Purchase Order #}
+{% set company_name = none %}
+{% if doc.project %}
+	{% set company_name = frappe.db.get_value("Project", doc.project, "company") %}
+{% endif %}
+{% if not company_name and doc.task %}
+	{% set company_name = frappe.db.get_value("Task", doc.task, "company") %}
+{% endif %}
+{% if not company_name %}
+	{% set company_name = frappe.db.get_default("company") or frappe.db.get_single_value("Global Defaults", "default_company") %}
+{% endif %}
+
+{% set links = frappe.get_all("Dynamic Link", filters={"link_doctype": "Company", "link_name": company_name, "parenttype": "Address"}, fields=["parent"], limit=1) if company_name else [] %}
+{% set company_address = links and frappe.db.get_value("Address", links[0].parent, ["address_line1", "address_line2", "city", "state", "country", "email_id", "phone"], as_dict=True) or none %}
+{% set company = frappe.db.get_value("Company", company_name, ["name", "country", "website", "phone_no", "email", "company_logo"], as_dict=1) if company_name else none %}
+
+<table class="table" style="margin-top: 0; border-bottom: solid 1px #d1d8dd">
+	<tbody>
+		<tr>
+			<td style="width: 50%; border: 0">
+				<table class="table" style="margin: 0">
+					<thead>
+						{% if company %}
+						<tr>
+							<td style="border: 0; padding: 0 !important">
+								<h3 style="margin: 0">{{ company.name[:-2] if company.name|length > 2 else company.name }} {{ company.country }}</h3>
+							</td>
+						</tr>
+						{% if company_address %}
+							<tr>
+								<td style="border: 0; padding: 0 !important">
+									<small>{{ [company_address.address_line1, company_address.city, company_address.state] | select | join(", ") }}</small>
+								</td>
+							</tr>
+						{% endif %}
+						{% if company.phone_no %}
+							<tr>
+								<td style="border: 0; padding: 0 !important">
+									<small>Telefone: {{ company.phone_no }}</small>
+								</td>
+							</tr>
+						{% endif %}
+						{% if company_address and company_address.phone %}
+							<tr>
+								<td style="border: 0; padding: 0 !important">
+									<small>Telemovel: {{ company_address.phone }}</small>
+								</td>
+							</tr>
+						{% endif %}
+						{% if company.email %}
+							<tr>
+								<td style="border: 0; padding: 0 !important">
+									<small>Email: {{ company.email }}</small>
+								</td>
+							</tr>
+						{% endif %}
+						<tr>
+							<td style="border: 0; padding: 0 !important">
+								<small>
+									Website:
+									<a href="{{ company.website or 'https://www.logicpulse.com/pt/' }}"
+									   target="_blank"
+									   class="text-info">
+										<strong>logicpulse.com </strong>
+									</a>
+								</small>
+							</td>
+						</tr>
+						{% endif %}
+					</thead>
+				</table>
+			</td>
+			<td style="width: 50%; border: 0">
+				<table class="table" style="margin: 0">
+					<thead>
+						<tr>
+							<td style="width: 30%; border: 0">
+								<img src="{{ (company.company_logo if company else none) or 'https://www.logicpulse.com/images/thumbs/0002017.png' }}"
+								     alt="company-logo"
+								     height="80px"
+								     width="auto" />
+							</td>
+						</tr>
+					</thead>
+				</table>
+				<table class="table table-striped" style="margin: 0">
+					<tbody>
+						<tr>
+							<th class="text-center">Inquérito de Satisfação</th>
+						</tr>
+						<tr>
+							<td class="text-center">{{ doc.name }}</td>
+						</tr>
+					</tbody>
+				</table>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+{% set respondent_label = "Anónimo" %}
+{% if doc.submitted_by and doc.submitted_by != "Guest" %}
+	{% set respondent_label = frappe.db.get_value("User", doc.submitted_by, "full_name") or doc.submitted_by %}
+{% endif %}
+{% set customer_name = frappe.db.get_value("Customer", doc.customer, "customer_name") if doc.customer else none %}
+ 
+<div class="ss-print">
+	{# <div class="ss-meta">
+		<table class="ss-meta-grid">
+			<tbody>
+				<tr>
+					<td>
+						<span class="ss-label">Contexto</span>
+						<span class="ss-value">{{ doc.context_label or "—" }}</span>
+					</td>
+					<td>
+						<span class="ss-label">Respondido por</span>
+						{% if doc.status == "Submitted" %}
+							<span class="ss-value{% if respondent_label == 'Anónimo' %} ss-anon{% endif %}">{{ respondent_label }}</span>
+						{% else %}
+							<span class="ss-value ss-anon">Ainda não respondido</span>
+						{% endif %}
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<span class="ss-label">Cliente</span>
+						<span class="ss-value">{{ customer_name or doc.customer or "—" }}</span>
+					</td>
+					<td>
+						<span class="ss-label">Data de resposta</span>
+						<span class="ss-value">
+							{% if doc.submitted_on %}
+								{{ frappe.format(doc.submitted_on, {"fieldtype": "Datetime"}) }}
+							{% else %}
+								—
+							{% endif %}
+						</span>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div> #}
+
+	<table class="table table-striped" style="margin-bottom: 0">
+		<tbody>
+			<tr>
+				<th class="text-center" colspan="2" width="45%">
+					<small>CONTEXTO</small>
+				</th>
+				<th class="text-center" width="25%">
+					<small>RESPONDIDO POR</small>
+				</th> 
+			</tr>
+			<tr>
+				<td class="text-center" colspan="2">
+					<small>{{ doc.context_label or "—" }}</small>
+				</td>
+				<td class="text-center">
+					{% if doc.status == "Submitted" %}
+						<span>{{ respondent_label }}</span>
+					{% else %}
+						<span>Ainda não respondido</span>
+					{% endif %}
+				</td> 
+			</tr>
+			<tr>
+				<th class="text-center"  colspan="2" width="45%">
+					<small>CLIENTE</small>
+				</th>
+				<th class="text-center" width="30%">
+					<small>DATA DE RESPOSTA</small>
+				</th> 
+			</tr>
+			<tr>
+				<td class="text-center"  colspan="2">
+					<small>{{ customer_name or doc.customer or "—" }}</small>
+				</td>
+				<td class="text-center">
+					<span>
+						{% if doc.submitted_on %}
+							{{ frappe.format(doc.submitted_on, {"fieldtype": "Datetime"}) }}
+						{% else %}
+							—
+						{% endif %}
+					</span>
+				</td>   
+			</tr>
+		</tbody>
+	</table>
+	<br />
+	<section class="ss-answers">
+		{% if doc.answers %}
+			{% for row in doc.answers %}
+				{% if row.question_type == "Text" %}
+					{% if row.answer_text %}
+						<br />
+						<div class="panel panel-default">
+							<div class="panel-heading">
+								<strong><small>Comentários ou sugestões</small></strong>
+							</div>
+							<div class="panel-body">
+								<small>{{ row.answer_text }}</small>
+							</div>
+						</div> 
+					{% else %}
+						<p class="ss-a ss-a-empty">Sem resposta</p>
+					{% endif %}
+				{% else %}
+					<article class="ss-q">
+						<h4 class="ss-q-title">
+							<span class="ss-q-num">{{ loop.index }}</span>
+							{{ row.question }}
+						</h4>
+						{% if row.question_type == "Scale" %}
+							{% if row.answer_scale is not none %}
+								<div class="ss-scale-squares">
+									{% for n in range(1, 11) %}
+										<span class="ss-scale-square{% if n <= row.answer_scale %} is-filled{% endif %}">
+											<span class="ss-scale-square-inner">{{ n }}</span>
+										</span>
+									{% endfor %}
+								</div>
+							{% else %}
+								<p class="ss-a ss-a-empty">Sem resposta</p>
+							{% endif %}
+						{% elif row.question_type == "Choice" %}
+							{% if row.answer_choice %}
+								<p class="ss-a">R: {{ row.answer_choice }}</p>
+							{% else %}
+								<p class="ss-a ss-a-empty">Sem resposta</p>
+							{% endif %}
+						{% else %}
+							<p class="ss-a ss-a-empty">Sem resposta</p>
+						{% endif %}
+					</article>
+				{% endif %}
+			{% endfor %}
+		{% else %}
+			<p class="ss-empty">Sem perguntas neste inquérito.</p>
+		{% endif %}
+	</section>
+</div>

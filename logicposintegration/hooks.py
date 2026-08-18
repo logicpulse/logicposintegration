@@ -25,7 +25,10 @@ app_license = "mit"
 # ------------------
 
 # include js, css files in header of desk.html
-app_include_css = "/assets/logicposintegration/css/desk_gantt.css"
+app_include_css = [
+	"/assets/logicposintegration/css/desk_gantt.css",
+	"/assets/logicposintegration/css/task.css",
+]
 app_include_js = [
 	"/assets/logicposintegration/js/pos_stock_grid.js",
 	"/assets/logicposintegration/js/satisfaction_survey_dialog.js",
@@ -101,6 +104,12 @@ portal_menu_items = [
 		"reference_doctype": "",
 	},
 	{
+		"title": "Tarefas",
+		"route": "/task",
+		"role": "Customer",
+		"reference_doctype": "Task",
+	},
+	{
 		"title": "Inquéritos",
 		"route": "/satisfacao",
 		"role": "Customer",
@@ -109,6 +118,7 @@ portal_menu_items = [
 ]
 
 website_route_rules = [
+	{"from_route": "/task", "to_route": "Task"},
 	{"from_route": "/satisfacao/<path:token>", "to_route": "satisfacao_form"},
 ]
 
@@ -235,6 +245,14 @@ before_request = ["logicposintegration.utils.portal_list.ensure_list_context_pat
 # override_doctype_dashboards = {
 # 	"Task": "logicposintegration.task.get_dashboard_data"
 # }
+
+override_doctype_class = {
+	"Task": "logicposintegration.overrides.task.CustomTask",
+}
+
+has_website_permission = {
+	"Task": "logicposintegration.overrides.task.has_website_permission",
+}
 
 # exempt linked doctypes from being automatically cancelled
 #

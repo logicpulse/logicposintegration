@@ -443,3 +443,114 @@ class TestSatisfactionSurveyAPI(FrappeTestCase):
 				token,
 				[{"idx": 1, "answer_choice": ""}, {"idx": 2, "answer_scale": None}],
 			)
+
+	def test_desk_cannot_edit_survey(self) -> None:
+		from logicposintegration.logicpos_integration.satisfaction_survey import (
+			create_and_send_satisfaction_survey,
+		)
+
+		self._ensure_template("_Test Sat Template Default", is_default=1)
+		customer = self._ensure_customer_with_portal()
+		project = self._ensure_completed_project(customer)
+		with patch("frappe.sendmail"):
+			name = create_and_send_satisfaction_survey(
+				"Project", project, "sat.portal@example.com"
+			)
+		doc = frappe.get_doc("Satisfaction Survey", name)
+		doc.recipient_email = "outro@example.com"
+		with self.assertRaises(frappe.ValidationError):
+			doc.save()
+
+	def test_compute_average_scale_normalizes_to_ten(self) -> None:
+		from logicposintegration.logicpos_integration.satisfaction_survey_dashboard import (
+			compute_average_scale,
+		)
+
+		self.assertEqual(compute_average_scale([]), 0.0)
+		self.assertEqual(
+			compute_average_scale(
+				[{"answer_scale": 8, "scale_min": 0, "scale_max": 10}]
+			),
+			8.0,
+		)
+		self.assertEqual(
+			compute_average_scale(
+				[{"answer_scale": 4, "scale_min": 1, "scale_max": 5}]
+			),
+			7.5,
+		)
+
+	def test_compute_response_rate(self) -> None:
+		from logicposintegration.logicpos_integration.satisfaction_survey_dashboard import (
+			compute_response_rate,
+		)
+
+		self.assertEqual(compute_response_rate(0, 0), 0.0)
+		self.assertEqual(compute_response_rate(1, 1), 50.0)
+		self.assertEqual(compute_response_rate(0, 2), 100.0)
+
+	def test_dashboard_kpis_match_inserted_surveys(self) -> None:
+		from logicposintegration.logicpos_integration.satisfaction_survey_dashboard import (
+			compute_response_rate,
+			get_survey_average_score,
+			get_survey_response_rate,
+		)
+
+		template = self._ensure_template("_Test Sat Template Default", is_default=1)
+		sent_before: int = frappe.db.count("Satisfaction Survey", {"status": "Sent"})
+		submitted_before: int = frappe.db.count(
+			"Satisfaction Survey", {"status": "Submitted"}
+		)
+
+		pending = frappe.get_doc(
+			{
+				"doctype": "Satisfaction Survey",
+				"survey_template": template,
+				"status": "Sent",
+				"context_label": "_Test Sat Dashboard Pending",
+				"recipient_email": "sat.dashboard@example.com",
+				"answers": [
+					{
+						"question": "Resolvido?",
+						"question_type": "Scale",
+						"scale_min": 0,
+						"scale_max": 10,
+					}
+				],
+			}
+		)
+		pending.flags.allow_survey_write = True
+		pending.insert(ignore_permissions=True)
+
+		submitted = frappe.get_doc(
+			{
+				"doctype": "Satisfaction Survey",
+				"survey_template": template,
+				"status": "Submitted",
+				"context_label": "_Test Sat Dashboard Submitted",
+				"recipient_email": "sat.dashboard@example.com",
+				"answers": [
+					{
+						"question": "Resolvido?",
+						"question_type": "Scale",
+						"scale_min": 0,
+						"scale_max": 10,
+						"answer_scale": 8,
+					}
+				],
+			}
+		)
+		submitted.flags.allow_survey_write = True
+		submitted.insert(ignore_permissions=True)
+
+		rate = get_survey_response_rate()
+		self.assertEqual(rate["fieldtype"], "Percent")
+		self.assertEqual(
+			rate["value"],
+			compute_response_rate(sent_before + 1, submitted_before + 1),
+		)
+
+		score = get_survey_average_score()
+		self.assertEqual(score["fieldtype"], "Float")
+		self.assertGreaterEqual(score["value"], 0.0)
+		self.assertLessEqual(score["value"], 10.0)

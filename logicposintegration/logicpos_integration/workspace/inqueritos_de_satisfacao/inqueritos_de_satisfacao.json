@@ -52,7 +52,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-08-10 18:40:00.000000",
+ "modified": "2026-08-18 19:00:00.000000",
  "modified_by": "Administrator",
  "module": "LogicPOS Integration",
  "name": "Inquéritos de Satisfação",
@@ -67,7 +67,7 @@
  "shortcuts": [
   {
    "color": "Blue",
-   "doc_view": "List",
+   "doc_view": "Dashboard",
    "label": "Inquéritos",
    "link_to": "Satisfaction Survey",
    "stats_filter": "",

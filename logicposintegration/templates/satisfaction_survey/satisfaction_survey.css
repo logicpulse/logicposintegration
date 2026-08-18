@@ -1,0 +1,121 @@
+/* Satisfaction Survey print — mesma estrutura (ss-q), tons alinhados a table-striped / panel */
+
+.ss-print {
+	font-family: Helvetica, Arial, sans-serif;
+	color: #36414c;
+	font-size: 12px;
+}
+
+.ss-print .ss-answers {
+	margin-top: 12px;
+}
+
+.ss-print .ss-answers .panel {
+	margin-top: 12px;
+	margin-bottom: 0;
+}
+
+.ss-print .ss-answers .panel-body {
+	white-space: pre-wrap;
+}
+
+.ss-print .ss-q {
+	margin: 12px 0 0;
+	/* padding: 10px 12px 12px; */
+	/* border: 1px solid #d1d8dd; */
+	/* border-radius: 0; */
+	background: #fff;
+	page-break-inside: avoid;
+}
+
+.ss-print .ss-q-num {
+	display: inline-block;
+	min-width: 18px;
+	margin-right: 6px;
+	font-size: 11px;
+	font-weight: 700;
+	color: #8d99a6;
+}
+
+.ss-print .ss-q-title {
+	margin: 0 0 8px;
+	padding-bottom: 6px;
+	border-bottom: 1px solid #d1d8dd;
+	font-size: 12px;
+	font-weight: 600;
+	color: #36414c;
+	line-height: 1.35;
+	background: transparent;
+}
+
+.ss-print .ss-a {
+	margin: 0;
+	padding: 8px 10px;
+	background: #f5f7fa;
+	border: 1px solid #e4e8ec;
+	border-radius: 0;
+	color: #36414c;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.4;
+}
+
+.ss-print .ss-a.ss-a-empty {
+	font-size: 12px;
+	font-weight: 400;
+	font-style: italic;
+	color: #8d99a6;
+	background: #fafbfc;
+}
+
+.ss-print .ss-scale-squares {
+	display: table;
+	width: 100%;
+	table-layout: fixed;
+	border-collapse: separate;
+	border-spacing: 3px 0;
+}
+
+.ss-print .ss-scale-square {
+	display: table-cell;
+	position: relative;
+	width: 10%;
+	height: 0;
+	/* 30% da largura de cada célula ≈ 3% da largura total (10 células) */
+	padding: 0 0 3% 0;
+	border: 1px solid #d1d8dd;
+	background: #fff;
+	vertical-align: middle;
+}
+
+.ss-print .ss-scale-square-inner {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	display: block;
+	color: #8d99a6;
+	font-size: 9px;
+	font-weight: 600;
+	line-height: 1;
+	text-align: center;
+	/* centrar verticalmente no print */
+	padding-top: 18%;
+}
+
+.ss-print .ss-scale-square.is-filled {
+	background-color: #4AC1ED;
+	border-color: #4AC1ED;
+}
+
+.ss-print .ss-scale-square.is-filled .ss-scale-square-inner {
+	color: #fff;
+}
+
+.ss-print .ss-empty {
+	padding: 16px;
+	text-align: center;
+	color: #8d99a6;
+	border: 1px dashed #d1d8dd;
+}

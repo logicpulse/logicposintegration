@@ -1,0 +1,48 @@
+{%- set status_colors = {
+  "Open": "orange",
+  "Working": "blue",
+  "Pending Review": "yellow",
+  "Overdue": "red",
+  "Completed": "green",
+  "Cancelled": "grey",
+  "Template": "purple"
+} -%}
+{%- set priority_colors = {
+  "Low": "grey",
+  "Medium": "blue",
+  "High": "orange",
+  "Urgent": "red"
+} -%}
+{%- set status_color = status_colors.get(doc.status, "grey") -%}
+{%- set task_href = "/tasks/" + (doc.name | urlencode) -%}
+<div class="portal-task-list-row">
+	<a href="{{ task_href }}" class="portal-task-list-row-link">{{ doc.subject }}</a>
+
+	<div class="portal-task-col-main">
+		<span class="portal-list-row-id">{{ doc.name }}</span>
+		<span class="portal-list-row-title">{{ doc.subject }}</span>
+		{% if doc.project %}
+		<span class="portal-list-row-subtitle">{{ _("Project") }}: {{ doc.project }}</span>
+		{% else %}
+		<span class="portal-list-row-subtitle portal-task-no-project">{{ _("Sem projeto") }}</span>
+		{% endif %}
+	</div>
+
+	<div class="portal-task-col-status">
+		<span class="portal-list-badge portal-list-badge-{{ status_color }}">{{ _(doc.status) }}</span>
+	</div>
+
+	<div class="portal-task-col-priority">
+		{% if doc.priority %}
+		{%- set pk = priority_colors.get(doc.priority, "grey") -%}
+		<span class="portal-list-badge portal-list-badge-{{ pk }}">{{ _(doc.priority) }}</span>
+		{% else %}
+		<span class="text-muted">—</span>
+		{% endif %}
+	</div>
+
+	<div class="portal-task-col-updated">
+		<span class="portal-list-row-date">{{ frappe.utils.pretty_date(doc.modified) }}</span>
+		<i class="fa-solid fa-angle-right portal-list-row-chevron" aria-hidden="true"></i>
+	</div>
+</div>

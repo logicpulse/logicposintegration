@@ -25,6 +25,12 @@ def ensure_list_context_patch():
 
 	import frappe.www.list as list_module
 	import frappe.www.portal as portal_module
+	import erpnext.projects.doctype.task.task as task_module
+
+	from logicposintegration.overrides.task import get_list_context as task_get_list_context
+
+	# ListPage.can_render exige get_list_context no módulo do DocType.
+	task_module.get_list_context = task_get_list_context
 
 	original = list_module.get_list_context
 
@@ -51,6 +57,22 @@ def apply_portal_list_templates(list_context, doctype):
 		list_context.row_template = "templates/includes/portal/portal_project_row.html"
 		list_context.list_template = "templates/includes/portal/portal_project_list.html"
 		list_context.portal_list_layout = "project"
+		from logicposintegration.overrides.task import count_orphan_tasks_for_portal_user
+
+		list_context.orphan_task_count = count_orphan_tasks_for_portal_user()
+		return
+
+	if doctype == "Task":
+		from logicposintegration.overrides.task import get_list_context as task_list_context
+		from logicposintegration.overrides.task import get_task_list
+
+		task_ctx = task_list_context()
+		list_context.update(task_ctx)
+		list_context.get_list = get_task_list
+		list_context.portal_list_layout = "task"
+		if frappe.form_dict.get("without_project"):
+			list_context.title = _("Tasks without project")
+			list_context.sub_title = _("Tasks linked to your customer with no project")
 		return
 
 	if doctype == "Issue":
