@@ -64,6 +64,105 @@ logicposintegration.quotation.validate_proposal_version = function (version) {
 	return true;
 };
 
+logicposintegration.quotation.get_update_item_discount_fields = function () {
+	const child_meta = frappe.get_meta("Quotation Item");
+	const get_precision = (fieldname) =>
+		child_meta.fields.find((field) => field.fieldname === fieldname)?.precision;
+
+	return {
+		discount_percentage: {
+			fieldtype: "Percent",
+			fieldname: "discount_percentage",
+			label: __("Discount (%)"),
+			in_list_view: 1,
+			columns: 1,
+			default: 0,
+			precision: get_precision("discount_percentage"),
+			onchange() {
+				const grid =
+					this.grid || this.layout?.grid || cur_dialog?.fields_dict?.trans_items?.grid;
+				logicposintegration.quotation.apply_discount_to_update_row(this.doc, grid);
+			},
+		},
+		hidden: [
+			{ fieldtype: "Currency", fieldname: "price_list_rate", hidden: 1 },
+			{ fieldtype: "Currency", fieldname: "rate_with_margin", hidden: 1 },
+			{ fieldtype: "Currency", fieldname: "discount_amount", hidden: 1 },
+		],
+	};
+};
+
+logicposintegration.quotation.apply_discount_to_update_row = function (row, grid) {
+	if (!row) {
+		return;
+	}
+	const base = flt(row.rate_with_margin) || flt(row.price_list_rate);
+	const percent = flt(row.discount_percentage);
+	if (base) {
+		row.discount_amount = flt((base * percent) / 100);
+		row.rate = flt(base * (1 - percent / 100));
+	}
+	grid?.refresh();
+};
+
+logicposintegration.quotation.populate_discount_on_rows = function (rows, frm) {
+	const items_by_name = Object.fromEntries((frm.doc.items || []).map((item) => [item.name, item]));
+	(rows || []).forEach((row) => {
+		const item = items_by_name[row.docname];
+		if (!item) {
+			return;
+		}
+		row.discount_percentage = item.discount_percentage;
+		row.discount_amount = item.discount_amount;
+		row.price_list_rate = item.price_list_rate;
+		row.rate_with_margin = item.rate_with_margin;
+	});
+};
+
+logicposintegration.quotation.inject_discount_fields = function (dialog_opts, frm) {
+	const table = (dialog_opts.fields || []).find((field) => field.fieldname === "trans_items");
+	if (!table?.fields || table.fields.some((field) => field.fieldname === "discount_percentage")) {
+		return;
+	}
+
+	const defs = logicposintegration.quotation.get_update_item_discount_fields();
+	const rate_idx = table.fields.findIndex((field) => field.fieldname === "rate");
+	const insert_at = rate_idx >= 0 ? rate_idx + 1 : table.fields.length;
+	table.fields.splice(insert_at, 0, defs.discount_percentage);
+	table.fields.push(...defs.hidden);
+	logicposintegration.quotation.populate_discount_on_rows(table.data, frm);
+};
+
+logicposintegration.quotation.patch_update_child_items = function () {
+	if (erpnext.utils._logicpos_quotation_update_items_patched_v2) {
+		return;
+	}
+	erpnext.utils._logicpos_quotation_update_items_patched_v2 = true;
+
+	const original = erpnext.utils.update_child_items;
+	erpnext.utils.update_child_items = function (opts) {
+		if ((opts?.frm?.doctype || opts?.frm?.doc?.doctype) !== "Quotation") {
+			return original.apply(this, arguments);
+		}
+
+		// cur_dialog só é definido em shown.bs.modal (depois do show()).
+		// Injectar os campos no construtor garante que a grelha e o form da linha os vêem.
+		const Dialog = frappe.ui.Dialog;
+		frappe.ui.Dialog = class extends Dialog {
+			constructor(dialog_opts) {
+				logicposintegration.quotation.inject_discount_fields(dialog_opts, opts.frm);
+				super(dialog_opts);
+			}
+		};
+
+		try {
+			return original.apply(this, arguments);
+		} finally {
+			frappe.ui.Dialog = Dialog;
+		}
+	};
+};
+
 logicposintegration.quotation.generate_proposal = function (frm, values) {
 	console.log(values);
 	// console.log(frm.doc);
@@ -113,10 +212,12 @@ logicposintegration.quotation.generate_proposal = function (frm, values) {
 frappe.ui.form.on("Quotation", {
 	setup(frm) {
 		logicposintegration.quotation.set_party_name_query(frm);
+		logicposintegration.quotation.patch_update_child_items();
 	},
 
 	refresh(frm) {
 		logicposintegration.quotation.set_party_name_query(frm);
+		logicposintegration.quotation.patch_update_child_items();
 
 		frm.add_custom_button(__("Proposta"), () => {
 			let dialog = new frappe.ui.Dialog({

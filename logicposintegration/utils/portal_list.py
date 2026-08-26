@@ -71,8 +71,8 @@ def apply_portal_list_templates(list_context, doctype):
 		list_context.get_list = get_task_list
 		list_context.portal_list_layout = "task"
 		if frappe.form_dict.get("without_project"):
-			list_context.title = _("Tasks without project")
-			list_context.sub_title = _("Tasks linked to your customer with no project")
+			list_context.title = _("Tarefas sem projeto")
+			list_context.sub_title = _("Tarefas associadas ao seu cliente que não estão ligadas a nenhum projeto")
 		return
 
 	if doctype == "Issue":

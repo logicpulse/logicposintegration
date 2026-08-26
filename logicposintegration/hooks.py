@@ -235,9 +235,11 @@ before_request = ["logicposintegration.utils.portal_list.ensure_list_context_pat
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "logicposintegration.event.get_events"
-# }
+override_whitelisted_methods = {
+	"erpnext.controllers.accounts_controller.update_child_qty_rate": (
+		"logicposintegration.overrides.quotation.update_child_qty_rate"
+	),
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
