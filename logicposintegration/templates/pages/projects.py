@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import json
+from typing import Any
 
 import frappe
 from frappe.utils import add_days, formatdate, getdate, today
 
-from erpnext.templates.pages.projects import get_context as erpnext_get_context
+from erpnext.templates.pages.projects import get_attachments, get_timesheets
 
 from logicposintegration.utils.portal_jinja import PRIORITY_COLORS, STATUS_COLORS
 
@@ -22,7 +25,7 @@ GANTT_STATUS_OPTIONS = [
 GANTT_PRIORITY_OPTIONS = ["Low", "Medium", "High", "Urgent"]
 
 
-def get_gantt_i18n():
+def get_gantt_i18n() -> dict[str, Any]:
 	return {
 		"status": frappe._("Status"),
 		"priority": frappe._("Priority"),
@@ -35,17 +38,64 @@ def get_gantt_i18n():
 	}
 
 
-def get_context(context):
-	erpnext_get_context(context)
-	context.doc.tasks = get_portal_tasks(
-		context.doc.name,
+def portal_user_can_access_project(project: str, user: str | None = None) -> bool:
+	"""Portal: Project User no projeto, ou Portal User do Customer do projeto."""
+	user = user or frappe.session.user
+	if not project or not user or user == "Guest":
+		return False
+	if user == "Administrator":
+		return True
+
+	if frappe.db.exists("Project User", {"parent": project, "user": user}):
+		return True
+
+	customer = frappe.db.get_value("Project", project, "customer")
+	if not customer:
+		return False
+
+	return bool(
+		frappe.db.exists(
+			"Portal User",
+			{"parent": customer, "parenttype": "Customer", "user": user},
+		)
+	)
+
+
+def get_context(context: Any) -> Any:
+	project_name = frappe.form_dict.project
+	user = frappe.session.user
+
+	if user == "Guest" or not portal_user_can_access_project(project_name, user):
+		raise frappe.PermissionError
+
+	project_user = frappe.db.get_value(
+		"Project User",
+		{"parent": project_name, "user": user},
+		["user", "view_attachments", "hide_timesheets"],
+		as_dict=True,
+	)
+
+	context.no_cache = 1
+	context.show_sidebar = True
+	project = frappe.get_doc("Project", project_name)
+
+	project.tasks = get_portal_tasks(
+		project.name,
 		search=frappe.form_dict.get("search"),
 	)
+
+	if project_user and not project_user.hide_timesheets:
+		project.timesheets = get_timesheets(project.name, start=0, search=frappe.form_dict.get("search"))
+
+	if project_user and project_user.view_attachments:
+		project.attachments = get_attachments(project.name)
+
+	context.doc = project
 	context.status_colors = STATUS_COLORS
 	context.priority_colors = PRIORITY_COLORS
-	context.gantt_tasks = json.dumps(get_gantt_tasks(context.doc.name))
+	context.gantt_tasks = json.dumps(get_gantt_tasks(project.name))
 	context.gantt_i18n = json.dumps(get_gantt_i18n(), default=str)
-	context.kanban_columns = get_kanban_columns(context.doc.name)
+	context.kanban_columns = get_kanban_columns(project.name)
 	return context
 
 

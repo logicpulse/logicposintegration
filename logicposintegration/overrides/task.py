@@ -8,22 +8,12 @@ from frappe.query_builder import Order
 from frappe.query_builder.functions import Count
 from frappe.utils.user import is_website_user
 
-from erpnext.controllers.website_list_for_contact import get_parents_for_user
 from erpnext.projects.doctype.task.task import Task
 
 
 class CustomTask(Task):
 	def has_webform_permission(self) -> bool:
-		"""Portal: Project User no projeto, ou customer_id do Customer do utilizador."""
-		if self.project:
-			project_user = frappe.db.get_value(
-				"Project User",
-				{"parent": self.project, "user": frappe.session.user},
-				"user",
-			)
-			if project_user:
-				return True
-
+		"""Portal: Project User, Portal User do Customer do projeto, ou customer_id."""
 		return portal_user_can_access_task(self)
 
 	def validate(self) -> None:
@@ -51,34 +41,48 @@ def portal_user_customers(user: str | None = None) -> list[str]:
 	user = user or frappe.session.user
 	if not user or user == "Guest":
 		return []
-	return get_parents_for_user("Customer")
+	return frappe.db.get_all(
+		"Portal User",
+		filters={"user": user, "parenttype": "Customer"},
+		pluck="parent",
+	)
+
+
+def _is_portal_user_of_customer(customer: str | None, user: str) -> bool:
+	if not customer:
+		return False
+	return bool(
+		frappe.db.exists(
+			"Portal User",
+			{"parent": customer, "parenttype": "Customer", "user": user},
+		)
+	)
 
 
 def portal_user_can_access_task(doc: Any, user: str | None = None) -> bool:
+	"""Portal: Project User, Portal User do Customer do projeto, ou customer_id da Task."""
 	user = user or frappe.session.user
-	customer_id = getattr(doc, "customer_id", None) or None
-	if not customer_id:
+	if not user or user == "Guest":
 		return False
-	return customer_id in portal_user_customers(user)
+	if user == "Administrator":
+		return True
+
+	project = getattr(doc, "project", None) or None
+	if project:
+		if frappe.db.exists("Project User", {"parent": project, "user": user}):
+			return True
+		project_customer = frappe.db.get_value("Project", project, "customer")
+		if _is_portal_user_of_customer(project_customer, user):
+			return True
+
+	customer_id = getattr(doc, "customer_id", None) or None
+	return _is_portal_user_of_customer(customer_id, user)
 
 
 def has_website_permission(doc: Any, ptype: str, user: str, verbose: bool = False) -> bool:
 	"""Portal: só leitura (ver detalhes). Escrita/criação/eliminação ficam bloqueadas."""
 	if ptype not in ("read", "select"):
 		return False
-
-	if frappe.session.user == "Administrator":
-		return True
-
-	if doc.project:
-		project_user = frappe.db.get_value(
-			"Project User",
-			{"parent": doc.project, "user": user},
-			"user",
-		)
-		if project_user:
-			return True
-
 	return portal_user_can_access_task(doc, user)
 
 

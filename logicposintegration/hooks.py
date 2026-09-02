@@ -144,6 +144,7 @@ jinja = {
 
 update_website_context = [
 	"logicposintegration.utils.portal_jinja.update_portal_project_context",
+	"logicposintegration.utils.portal_comments.update_portal_task_comments_context",
 ]
 
 before_request = ["logicposintegration.utils.portal_list.ensure_list_context_patch"]

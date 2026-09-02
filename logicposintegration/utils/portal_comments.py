@@ -25,6 +25,50 @@ PORTAL_COMMENT_DOCTYPES = {
 }
 
 
+def get_task_portal_comment_list(task_name: str, user: str | None = None) -> list[dict]:
+	"""All Task comments for portal users with access (includes unpublished desk comments)."""
+	from logicposintegration.overrides.task import portal_user_can_access_task
+
+	user = user or frappe.session.user
+	if not task_name or not user or user == "Guest":
+		return []
+
+	task = frappe.get_doc("Task", task_name)
+	if not portal_user_can_access_task(task, user):
+		return []
+
+	return frappe.get_all(
+		"Comment",
+		fields=["name", "creation", "owner", "comment_email", "comment_by", "content"],
+		filters={
+			"reference_doctype": "Task",
+			"reference_name": task_name,
+			"comment_type": "Comment",
+		},
+		order_by="creation desc",
+		ignore_permissions=True,
+	)
+
+
+def update_portal_task_comments_context(context) -> None:
+	"""Web Form /tasks: show full comment thread to authorized portal users."""
+	if context.get("reference_doctype") != "Task":
+		return
+
+	task_name = context.get("reference_name")
+	if not task_name or frappe.session.user == "Guest":
+		return
+
+	from logicposintegration.overrides.task import portal_user_can_access_task
+
+	if not portal_user_can_access_task(frappe.get_doc("Task", task_name)):
+		return
+
+	comments = get_task_portal_comment_list(task_name)
+	context["comment_list"] = comments
+	context["comment_count"] = len(comments)
+
+
 def can_comment_on(doctype: str, name: str) -> bool:
 	if frappe.session.user == "Guest":
 		return False
